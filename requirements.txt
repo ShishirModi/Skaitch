@@ -9,3 +9,4 @@ safetensors
 accelerate
 huggingface_hub
 pillow
+streamlit

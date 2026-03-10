@@ -3,3 +3,10 @@ skaitch_env/
 
 # Ignore system files
 .DS_Store
+
+# Ignore large model weights
+*.safetensors
+*.ckpt
+*.pt
+*.pth
+*.bin
