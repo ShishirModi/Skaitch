@@ -1,13 +1,8 @@
 {
   "_class_name": "UNet2DConditionModel",
-  "_diffusers_version": "0.34.0",
-  "_name_or_path": "/Users/shishirmodi/.cache/huggingface/hub/models--stable-diffusion-v1-5--stable-diffusion-v1-5/snapshots/451f4fe16113bff5a5d2269ed5ad43b0592e9a14/unet",
+  "_diffusers_version": "0.6.0",
   "act_fn": "silu",
-  "addition_embed_type": null,
-  "addition_embed_type_num_heads": 64,
-  "addition_time_embed_dim": null,
   "attention_head_dim": 8,
-  "attention_type": "default",
   "block_out_channels": [
     320,
     640,

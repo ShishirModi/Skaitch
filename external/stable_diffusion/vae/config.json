@@ -1,7 +1,6 @@
 {
   "_class_name": "AutoencoderKL",
-  "_diffusers_version": "0.34.0",
-  "_name_or_path": "/Users/shishirmodi/.cache/huggingface/hub/models--stable-diffusion-v1-5--stable-diffusion-v1-5/snapshots/451f4fe16113bff5a5d2269ed5ad43b0592e9a14/vae",
+  "_diffusers_version": "0.6.0",
   "act_fn": "silu",
   "block_out_channels": [
     128,

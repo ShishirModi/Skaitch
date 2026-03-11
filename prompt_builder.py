@@ -165,8 +165,9 @@ def build_forensic_prompt(
 
     # Style tokens for quality
     quality_tokens = (
-        "front-facing, centered, white background, high detail, sharp lines, "
-        "professional forensic sketch, police composite"
+        "front-facing portrait, centered composition, "
+        "white background, high detail, sharp lines, "
+        "professional forensic sketch, police composite art style"
     )
 
     prompt = ", ".join(parts) + ", " + quality_tokens

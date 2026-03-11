@@ -1,6 +1,6 @@
 {
   "_class_name": "StableDiffusionPipeline",
-  "_diffusers_version": "0.34.0",
+  "_diffusers_version": "0.6.0",
   "_name_or_path": "stable-diffusion-v1-5/stable-diffusion-v1-5",
   "feature_extractor": [
     "transformers",
