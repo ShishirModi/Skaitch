@@ -42,7 +42,7 @@ Skaitch/
 
 ## Prerequisites
 
-- **Python 3.10+**
+- **Python 3.10+** (On Ubuntu/Linux, you must install the Python development headers, e.g. `sudo apt-get install python3.X-dev`, required for Jittor to compile)
 - **Linux Environment** (Required for compiling the Jittor neural network backend powering DeepFaceDrawing)
 - **Git** (to clone the repo)
 - **Stable Diffusion v1.5 weights** placed in `external/stable_diffusion/`. You can download them from [Hugging Face](https://huggingface.co/stable-diffusion-v1-5/stable-diffusion-v1-5) or use the `huggingface-cli`:
