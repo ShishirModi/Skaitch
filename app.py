@@ -581,15 +581,7 @@ if generate:
 
     # ── Pipeline specific displays ──────────────────────────────────────
     if forensic_mode:
-        with st.spinner("🤖 DeepFaceDrawing Fact-Check — Generating Photorealistic Output …"):
-            try:
-                dfd_image = dfd_integration.run_dfd(image, selected_features)
-                dfd_success = True
-            except Exception as e:
-                dfd_error = str(e)
-                dfd_success = False
-
-        col_img1, col_img2, col_meta = st.columns([1.5, 1.5, 1], gap="medium")
+        col_img1, col_img2, col_meta = st.columns([3, 3, 2], gap="medium")
         
         with col_img1:
             st.markdown("#### Stable Diffusion Sketch")
@@ -598,11 +590,20 @@ if generate:
 
         with col_img2:
             st.markdown("#### Photorealistic Fact-Check")
+            with st.spinner("🤖 DeepFaceDrawing Fact-Check — Generating Photorealistic Output …"):
+                try:
+                    dfd_image = dfd_integration.run_dfd(image, selected_features)
+                    dfd_success = True
+                except Exception as e:
+                    import html
+                    dfd_error = html.escape(str(e))
+                    dfd_success = False
+
             if dfd_success:
                 st.image(dfd_image, use_container_width=True)
                 st.caption(f"*DeepFaceDrawing (Jittor)*")
             else:
-                st.error(f"DeepFaceDrawing failed: {dfd_error}\nEnsure you are on a compatible Linux environment with Jittor compiled.")
+                st.error(f"DeepFaceDrawing failed: {dfd_error}\n\nEnsure you are on a compatible Linux environment with Jittor compiled.")
 
     else:
         # Standard layout for free-text mode
