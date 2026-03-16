@@ -74,7 +74,7 @@ class InputGraphicsScene(QGraphicsScene):
                 self.model[key].initialize(self.opt)
                 self.model[key].eval()
 
-                self.mask[key] = cv2.cvtColor(cv2.imread('heat/' + key + '.jpg'), cv2.COLOR_RGB2GRAY).astype(np.float) / 255
+                self.mask[key] = cv2.cvtColor(cv2.imread('heat/' + key + '.jpg'), cv2.COLOR_RGB2GRAY).astype(float) / 255
                 self.mask[key] = np.expand_dims(self.mask[key], axis=2)
                
             #for input and refine weight

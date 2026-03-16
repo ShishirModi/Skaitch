@@ -14,6 +14,7 @@ A local **Stable Diffusion** image generation tool with a polished **Streamlit**
 |---|---|
 | **Text-to-image** | Generate images from natural-language prompts using Stable Diffusion v1.5 |
 | **Forensic Sketch Mode** | Build police-grade composite sketches by selecting facial features from dropdowns |
+| **DeepFaceDrawing Fact-Check** | Convert generated sketches into photorealistic images dynamically using a secondary Jittor model pipeline |
 | **Negative prompts** | Specify what you *don't* want to see in the output |
 | **Parameter control** | Tune inference steps, guidance scale, dimensions, and seed |
 | **Reproducibility** | Fix the seed to regenerate the exact same image |
@@ -42,6 +43,7 @@ Skaitch/
 ## Prerequisites
 
 - **Python 3.10+**
+- **Linux Environment** (Required for compiling the Jittor neural network backend powering DeepFaceDrawing)
 - **Git** (to clone the repo)
 - **Stable Diffusion v1.5 weights** placed in `external/stable_diffusion/`. You can download them from [Hugging Face](https://huggingface.co/stable-diffusion-v1-5/stable-diffusion-v1-5) or use the `huggingface-cli`:
   ```bash
@@ -108,6 +110,8 @@ The app will open at **http://localhost:8501**.
 5. Review the **Generated prompt** preview, then click **🚀 Generate**.
 
 > Forensic mode auto-sets guidance scale to **10.0** and inference steps to **30** for better sketch quality. You can still adjust these manually.
+
+> **DeepFaceDrawing Integration:** When Forensic Mode is activated, the generated sketch is automatically processed via our secondary **DeepFaceDrawing (Jittor)** pipeline. The model parses your morphological feature selections (like Jawline width) into mathematical tensors, adjusting the model weights to convert the sketch into an accurate, photorealistic portrait displayed side-by-side with the sketch.
 
 > **Note:** Generation runs on CPU by default and can take several minutes. A CUDA-capable GPU will significantly speed things up.
 

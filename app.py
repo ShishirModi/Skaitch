@@ -16,6 +16,7 @@ from prompt_builder import (
 )
 
 from visual_aids import VISUAL_AIDS, get_svg_html
+import dfd_integration
 
 # ─── Page config ───────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -578,13 +579,39 @@ if generate:
         unsafe_allow_html=True,
     )
 
-    # ── Layout: image + params side-by-side ────────────────────────────
-    col_img, col_meta = st.columns([3, 1], gap="large")
+    # ── Pipeline specific displays ──────────────────────────────────────
+    if forensic_mode:
+        with st.spinner("🤖 DeepFaceDrawing Fact-Check — Generating Photorealistic Output …"):
+            try:
+                dfd_image = dfd_integration.run_dfd(image, selected_features)
+                dfd_success = True
+            except Exception as e:
+                dfd_error = str(e)
+                dfd_success = False
 
-    with col_img:
-        st.image(image, use_container_width=True)
-        st.caption(f"*\"{prompt}\"*")
+        col_img1, col_img2, col_meta = st.columns([1.5, 1.5, 1], gap="medium")
+        
+        with col_img1:
+            st.markdown("#### Stable Diffusion Sketch")
+            st.image(image, use_container_width=True)
+            st.caption(f"*\"{prompt}\"*")
 
+        with col_img2:
+            st.markdown("#### Photorealistic Fact-Check")
+            if dfd_success:
+                st.image(dfd_image, use_container_width=True)
+                st.caption(f"*DeepFaceDrawing (Jittor)*")
+            else:
+                st.error(f"DeepFaceDrawing failed: {dfd_error}\nEnsure you are on a compatible Linux environment with Jittor compiled.")
+
+    else:
+        # Standard layout for free-text mode
+        col_img1, col_img2, col_meta = st.columns([0, 3, 1], gap="large")
+        with col_img2:
+            st.image(image, use_container_width=True)
+            st.caption(f"*\"{prompt}\"*")
+
+    # ── Meta info (Right Column) ──────────────────────────────────────────
     with col_meta:
         seed_row = ""
         if seed != 0:
@@ -628,12 +655,24 @@ if generate:
         buf = io.BytesIO()
         image.save(buf, format="PNG")
         st.download_button(
-            label="⬇️  Download PNG",
+            label="⬇️  Download Sketch (PNG)",
             data=buf.getvalue(),
-            file_name="skaitch_output.png",
+            file_name="skaitch_sketch.png",
             mime="image/png",
             use_container_width=True,
         )
+        
+        if forensic_mode and dfd_success:
+            st.markdown("<div style='margin-top:0.4rem'></div>", unsafe_allow_html=True)
+            buf2 = io.BytesIO()
+            dfd_image.save(buf2, format="PNG")
+            st.download_button(
+                label="⬇️  Download Fact-Check (PNG)",
+                data=buf2.getvalue(),
+                file_name="skaitch_photorealistic_factcheck.png",
+                mime="image/png",
+                use_container_width=True,
+            )
 
 else:
     # ── Empty-state hero ───────────────────────────────────────────────

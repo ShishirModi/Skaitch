@@ -10,3 +10,6 @@ accelerate
 huggingface_hub
 pillow
 streamlit
+jittor
+scipy
+opencv-python-headless
