@@ -11,18 +11,6 @@ from PIL import Image
 dfd_dir = os.path.join(os.path.dirname(__file__), "external", "DeepFaceDrawing")
 sys.path.append(dfd_dir)
 
-import jittor as jt
-# Attempt to enable CUDA if available, but default to CPU since Streamlit is likely CPU bound
-try:
-    if jt.has_cuda:
-        jt.flags.use_cuda = 1
-    else:
-        jt.flags.use_cuda = 0
-except Exception:
-    jt.flags.use_cuda = 0
-
-from CombineModel_jt import CombineModel
-
 # Global instance so we don't reload the Jittor model on every click
 _combine_model = None
 
@@ -30,6 +18,18 @@ def get_combine_model():
     """Lazy load the CombineModel to save memory until clicked."""
     global _combine_model
     if _combine_model is None:
+        import jittor as jt
+        # Attempt to enable CUDA if available, but default to CPU since Streamlit is likely CPU bound
+        try:
+            if jt.has_cuda:
+                jt.flags.use_cuda = 1
+            else:
+                jt.flags.use_cuda = 0
+        except Exception:
+            jt.flags.use_cuda = 0
+        
+        from CombineModel_jt import CombineModel
+
         # Before instantiating the model, we MUST switch the CWD temporarily because
         # DeepFaceDrawing loads checkpoint paths relative to its own root directory
         original_cwd = os.getcwd()
