@@ -8,24 +8,26 @@ FACIAL_FEATURES = {
     "Gender": ["Male", "Female"],
     "Age range": ["18–25", "26–35", "36–45", "46–55", "56–65", "65+"],
     "Face shape": [
-        "Oval", "Round", "Square", "Heart", "Oblong", "Diamond",
+        "Oval", "Round", "Square", "Heart", "Oblong", "Diamond", "Triangle", "Pear"
     ],
     "Eyes": [
         "Almond", "Round", "Hooded", "Deep-set", "Monolid",
-        "Wide-set", "Close-set", "Upturned",
+        "Wide-set", "Close-set", "Upturned", "Downturned"
     ],
     "Eyebrows": [
         "Thick", "Thin", "Arched", "Straight", "Bushy", "Sparse",
+        "High arch", "Soft arch", "S-shaped"
     ],
     "Nose": [
         "Straight", "Broad", "Narrow", "Aquiline", "Button",
-        "Wide bridge", "Snub", "Roman",
+        "Wide bridge", "Snub", "Roman", "Bulbous", "Hawk"
     ],
     "Mouth / Lips": [
         "Thin", "Full", "Wide", "Small", "Downturned", "Upturned",
+        "Bow-shaped", "Heavy lower lip", "Heavy upper lip"
     ],
     "Jawline": [
-        "Strong", "Soft", "Pointed", "Wide", "Receding",
+        "Strong", "Soft", "Pointed", "Wide", "Receding", "V-shaped"
     ],
     "Hair style": [
         "Short cropped", "Buzz cut", "Slicked back", "Curly", "Wavy",

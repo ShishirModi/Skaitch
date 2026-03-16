@@ -15,6 +15,8 @@ from prompt_builder import (
     build_forensic_prompt,
 )
 
+from visual_aids import VISUAL_AIDS, get_svg_html
+
 # ─── Page config ───────────────────────────────────────────────────────────────
 st.set_page_config(
     page_title="Skaitch – Stable Diffusion",
@@ -345,20 +347,22 @@ with st.sidebar:
         # Face structure row
         col_fs, col_jl = st.columns(2)
         with col_fs:
-            selected_features["Face shape"] = st.selectbox(
-                "Face shape", FACIAL_FEATURES["Face shape"]
-            )
+            feature_val = st.selectbox("Face shape", FACIAL_FEATURES["Face shape"])
+            selected_features["Face shape"] = feature_val
+            st.markdown(get_svg_html(VISUAL_AIDS["Face shape"][feature_val]), unsafe_allow_html=True)
+            
         with col_jl:
-            selected_features["Jawline"] = st.selectbox(
-                "Jawline", FACIAL_FEATURES["Jawline"]
-            )
+            feature_val = st.selectbox("Jawline", FACIAL_FEATURES["Jawline"])
+            selected_features["Jawline"] = feature_val
+            st.markdown(get_svg_html(VISUAL_AIDS["Jawline"][feature_val]), unsafe_allow_html=True)
 
         # Eyes + Brows row
         col_e, col_eb = st.columns(2)
         with col_e:
-            selected_features["Eyes"] = st.selectbox(
-                "Eyes", FACIAL_FEATURES["Eyes"]
-            )
+            feature_val = st.selectbox("Eyes", FACIAL_FEATURES["Eyes"])
+            selected_features["Eyes"] = feature_val
+            st.markdown(get_svg_html(VISUAL_AIDS["Eyes"][feature_val]), unsafe_allow_html=True)
+            
         with col_eb:
             selected_features["Eyebrows"] = st.selectbox(
                 "Eyebrows", FACIAL_FEATURES["Eyebrows"]
@@ -367,9 +371,10 @@ with st.sidebar:
         # Nose + Mouth row
         col_n, col_m = st.columns(2)
         with col_n:
-            selected_features["Nose"] = st.selectbox(
-                "Nose", FACIAL_FEATURES["Nose"]
-            )
+            feature_val = st.selectbox("Nose", FACIAL_FEATURES["Nose"])
+            selected_features["Nose"] = feature_val
+            st.markdown(get_svg_html(VISUAL_AIDS["Nose"][feature_val]), unsafe_allow_html=True)
+            
         with col_m:
             selected_features["Mouth / Lips"] = st.selectbox(
                 "Mouth / Lips", FACIAL_FEATURES["Mouth / Lips"]
