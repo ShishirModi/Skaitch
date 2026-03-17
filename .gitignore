@@ -10,3 +10,5 @@ skaitch_env/
 *.pt
 *.pth
 *.bin
+
+.env

@@ -15,6 +15,8 @@ A local **Stable Diffusion** image generation tool with a polished **Streamlit**
 | **Text-to-image** | Generate images from natural-language prompts using Stable Diffusion v1.5 |
 | **Forensic Sketch Mode** | Build police-grade composite sketches by selecting facial features from dropdowns |
 | **DeepFaceDrawing Fact-Check** | Convert generated sketches into photorealistic images dynamically using a secondary Jittor model pipeline |
+| **Admin Mode** | Password-protected sidebar dashboard to view recent generated images and manage settings |
+| **Auto-Save** | Successfully generated sketches and photorealistic fact-checks are automatically saved to `data/` |
 | **Negative prompts** | Specify what you *don't* want to see in the output |
 | **Parameter control** | Tune inference steps, guidance scale, dimensions, and seed |
 | **Reproducibility** | Fix the seed to regenerate the exact same image |
@@ -29,11 +31,14 @@ A local **Stable Diffusion** image generation tool with a polished **Streamlit**
 Skaitch/
 ├── app.py                  # Streamlit frontend
 ├── prompt_builder.py       # Forensic sketch prompt assembly module
+├── visual_aids.py          # SVG graphics renderer for UI dropdowns
+├── dfd_integration.py      # Core Jittor bridge for DeepFaceDrawing model
 ├── scripts/
 │   └── sd_test.py          # Headless CLI test script
 ├── external/
 │   └── stable_diffusion/   # Local model weights (SD v1.5)
-├── data/                   # Generated outputs (git-ignored)
+├── data/                   # Generated outputs auto-saved here (git-ignored)
+├── .env.example            # Template for storing secure environment variables
 ├── requirements.txt
 └── skaitch_env/            # Python virtual environment
 ```
@@ -69,7 +74,15 @@ source skaitch_env/bin/activate
 pip install -r requirements.txt
 ```
 
-### 3. Launch the app
+### 3. Initialize Admin Configuration
+
+Copy the example environment variables file and set your secure password:
+```bash
+cp .env.example .env
+```
+*(You can open `.env` and change `ADMIN_PASSWORD` to whatever you prefer)*
+
+### 4. Launch the app
 
 ```bash
 streamlit run app.py

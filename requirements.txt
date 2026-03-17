@@ -13,3 +13,4 @@ streamlit
 jittor
 scipy
 opencv-python-headless
+python-dotenv

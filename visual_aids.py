@@ -9,8 +9,8 @@ def get_svg_html(svg_string: str) -> str:
     <div style="display: flex; justify-content: center; align-items: center; 
                 background: rgba(255,255,255,0.05); border-radius: 8px; 
                 padding: 10px; margin-top: 5px; margin-bottom: 15px; 
-                height: 80px; width: 100%;">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="60" height="60">
+                height: auto; min-height: 60px; max-height: 80px; width: 100%;">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%" style="max-width: 60px; max-height: 60px;">
             {svg_string}
         </svg>
     </div>

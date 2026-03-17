@@ -7,6 +7,10 @@ from diffusers import StableDiffusionPipeline
 from PIL import Image
 import io
 import os
+from dotenv import load_dotenv
+
+# Load environment variables (e.g., ADMIN_PASSWORD)
+load_dotenv()
 
 from prompt_builder import (
     FACIAL_FEATURES,
@@ -39,13 +43,14 @@ st.markdown(
     /* ── Global tweaks ───────────────────────────────────────────────── */
     .block-container {
         padding-top: 2rem;
+        padding-bottom: 2rem;
         max-width: 1100px;
     }
 
     /* ── Header ──────────────────────────────────────────────────────── */
     .main-header {
         background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
-        padding: 2.4rem 2.8rem;
+        padding: clamp(1.5rem, 5vw, 2.4rem) clamp(1.5rem, 5vw, 2.8rem);
         border-radius: 20px;
         margin-bottom: 1.8rem;
         color: #fff;
@@ -66,21 +71,21 @@ st.markdown(
     }
     .main-header h1 {
         margin: 0;
-        font-size: 2rem;
+        font-size: clamp(1.5rem, 4vw, 2rem);
         font-weight: 700;
         letter-spacing: -0.5px;
     }
     .main-header p {
         margin: 0.5rem 0 0 0;
         opacity: 0.6;
-        font-size: 0.95rem;
+        font-size: clamp(0.85rem, 2.5vw, 0.95rem);
         font-weight: 300;
         letter-spacing: 0.2px;
     }
 
     /* ── Sidebar ─────────────────────────────────────────────────────── */
-    section[data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #0d0d1f 0%, #161636 100%);
+    [data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #0d0d1f 0%, #161636 100%) !important;
         border-right: 1px solid rgba(255,255,255,0.06);
     }
 
@@ -318,6 +323,55 @@ with st.sidebar:
         '<div class="sidebar-subtitle">Stable Diffusion · Local</div>',
         unsafe_allow_html=True,
     )
+
+    # ── Admin Login ────────────────────────────────────────────────────────
+    if "admin_mode" not in st.session_state:
+        st.session_state.admin_mode = False
+
+    admin_password_env = os.environ.get("ADMIN_PASSWORD", "")
+    
+    with st.sidebar.expander("⚙️ Admin Settings", expanded=False):
+        if not st.session_state.admin_mode:
+            st.markdown("<small>Enter admin password to unlock.</small>", unsafe_allow_html=True)
+            pwd = st.text_input("Password", type="password", key="admin_pwd_input", label_visibility="collapsed")
+            if st.button("Login", key="admin_login_btn"):
+                if pwd and pwd == admin_password_env:
+                    st.session_state.admin_mode = True
+                    st.rerun()
+                else:
+                    st.error("Incorrect password.")
+        else:
+            st.success("✅ Admin Mode Active")
+            # Example Admin specific options
+            st.markdown("**Admin Controls**")
+            admin_debug = st.checkbox("Show Debug Metrics", value=False)
+            admin_save_disabled = st.checkbox("Disable Auto-Save to Disk", value=False)
+            
+            st.divider()
+            st.markdown("**Image Gallery**")
+            st.markdown("<small>Recent images saved to `data/`</small>", unsafe_allow_html=True)
+            
+            if os.path.exists("data"):
+                # Get all PNG files, sort by modified time descending
+                img_files = [f for f in os.listdir("data") if f.endswith(".png")]
+                img_files.sort(key=lambda x: os.path.getmtime(os.path.join("data", x)), reverse=True)
+                
+                if img_files:
+                    # Show up to 10 recent images in the sidebar
+                    for img_file in img_files[:10]:
+                        with st.container():
+                            st.caption(img_file)
+                            st.image(os.path.join("data", img_file), use_container_width=True)
+                else:
+                    st.info("No images found in data folder.")
+            else:
+                st.info("Data folder does not exist yet.")
+                
+            st.divider()
+            
+            if st.button("Logout", key="admin_logout_btn"):
+                st.session_state.admin_mode = False
+                st.rerun()
 
     # ── Mode toggle ────────────────────────────────────────────────────────
     forensic_mode = st.toggle("🔍 Forensic Sketch Mode", value=False)
@@ -611,6 +665,24 @@ if generate:
         with col_img2:
             st.image(image, use_container_width=True)
             st.caption(f"*\"{prompt}\"*")
+
+    # ── Auto-Save to data/ ──────────────────────────────────────────────
+    import datetime
+    os.makedirs("data", exist_ok=True)
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    
+    # Check admin control before saving 
+    admin_save_disabled = st.session_state.get("admin_mode", False) and st.session_state.get("Disable Auto-Save to Disk", False)
+    
+    if not admin_save_disabled:
+        # Save the original SD Sketch
+        sketch_path = os.path.join("data", f"sketch_{timestamp}.png")
+        image.save(sketch_path)
+        
+        # Save the DFD output if applicable
+        if forensic_mode and dfd_success:
+            dfd_path = os.path.join("data", f"factcheck_{timestamp}.png")
+            dfd_image.save(dfd_path)
 
     # ── Meta info (Right Column) ──────────────────────────────────────────
     with col_meta:
