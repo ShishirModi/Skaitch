@@ -22,7 +22,7 @@ from prompt_builder import (
 )
 
 from visual_aids import VISUAL_AIDS, get_svg_html
-import dfd_integration
+import refinement_pipeline
 
 # ─── Page config ───────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -698,24 +698,24 @@ if generate:
                 st.caption(f"*Variation {idx+1}*")
         
         st.divider()
-        col_dfd, col_meta = st.columns([3, 2], gap="large")
+        col_img_refine, col_meta = st.columns([3, 2], gap="large")
 
-        with col_dfd:
-            st.markdown("#### Photorealistic Fact-Check (Variation 1)")
-            with st.spinner("🤖 DeepFaceDrawing Fact-Check — Generating Photorealistic Output …"):
+        with col_img_refine:
+            st.markdown("#### Photorealistic Refinement (Variation 1)")
+            with st.spinner("🤖 SDXL-ControlNet Refinement — Generating Photorealistic Output …"):
                 try:
-                    dfd_image = dfd_integration.run_dfd(main_image, selected_features)
-                    dfd_success = True
+                    refinement_image = refinement_pipeline.run_sdxl_refinement(main_image, selected_features)
+                    refine_success = True
                 except Exception as e:
                     import html
-                    dfd_error = html.escape(str(e))
-                    dfd_success = False
+                    refine_error = html.escape(str(e))
+                    refine_success = False
 
-            if dfd_success:
-                st.image(dfd_image, use_container_width=True)
-                st.caption(f"*DeepFaceDrawing (PyTorch)*")
+            if refine_success:
+                st.image(refinement_image, use_container_width=True)
+                st.caption(f"*SDXL-ControlNet Refinement*")
             else:
-                st.error(f"DeepFaceDrawing failed: {dfd_error}\n\nEnsure that the PyTorch models in `external/DeepFaceDrawing` are correctly initialized.")
+                st.error(f"Refinement failed: {refine_error}\n\nEnsure that the ControlNet weights are correctly downloaded to the NVMe storage.")
 
     else:
         # Standard layout for free-text mode
@@ -737,10 +737,10 @@ if generate:
             sketch_path = os.path.join("data", f"sketch_{timestamp}_v{idx+1}.png")
             img.save(sketch_path)
         
-        # Save the DFD output if applicable
-        if forensic_mode and dfd_success:
-            dfd_path = os.path.join("data", f"factcheck_{timestamp}.png")
-            dfd_image.save(dfd_path)
+        # Save the Refinement output if applicable
+        if forensic_mode and refine_success:
+            refine_save_path = os.path.join("data", f"refinement_{timestamp}.png")
+            refinement_image.save(refine_save_path)
 
     # ── Meta info (Right Column) ──────────────────────────────────────────
     with col_meta:
@@ -795,19 +795,19 @@ if generate:
                 key=f"dl_sketch_{idx}"
             )
         
-        if forensic_mode and dfd_success:
+        if forensic_mode and refine_success:
             st.markdown("<div style='margin-top:0.4rem'></div>", unsafe_allow_html=True)
             buf2 = io.BytesIO()
-            dfd_image.save(buf2, format="PNG")
+            refinement_image.save(buf2, format="PNG")
             st.download_button(
-                label="⬇️ Download Fact-Check (PNG)",
+                label="⬇️ Download Refinement (PNG)",
                 data=buf2.getvalue(),
-                file_name=f"skaitch_photorealistic_{timestamp}.png",
+                file_name=f"skaitch_refinement_{timestamp}.png",
                 mime="image/png",
                 use_container_width=True,
-                key="dl_factcheck"
+                key="dl_refinement"
             )
 
 else:
     gpu_txt = torch.cuda.get_device_name(0) if torch.cuda.is_available() else "CPU"
-    st.info(f"**Ready!** System is loaded with `SDXL Base 1.0` and `CodeFormer` on **{gpu_txt}**.")
+    st.info(f"**Ready!** System is loaded with `SDXL Base 1.0`, `SDXL ControlNet`, and `CodeFormer` on **{gpu_txt}**.")

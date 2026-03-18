@@ -1,6 +1,7 @@
 # Ignore virtual environment
 skaitch_env/
 venv/
+.env
 
 # Ignore system files
 .DS_Store
@@ -12,4 +13,5 @@ venv/
 *.pth
 *.bin
 
-.env
+# Ignore external models
+external/

@@ -2,7 +2,7 @@
 
 **Skaitch** is an advanced, GPU-accelerated application engineered to produce professional-grade forensic facial sketches from structured categorical inputs. Operating conceptually similarly to traditional police composite toolkits, Skaitch leverages modern Deep Generative Neural Networks in a dual-phase architecture.
 
-Phase I translates semantic morphological descriptors into hyper-detailed pencil sketches via **Stable Diffusion XL (SDXL)**, further refined by **CodeFormer** face restoration geometry. Phase II maps the synthesized sketch into the **DeepFaceDrawing** conditional GAN to achieve a photorealistic "fact-check" portrait translation through intermediate manifold learning.
+Phase I translates semantic morphological descriptors into hyper-detailed pencil sketches via **Stable Diffusion XL (SDXL)**, further refined by **CodeFormer** face restoration geometry. Phase II maps the synthesized sketch into an **SDXL + ControlNet** refinement pass to achieve a photorealistic "fact-check" portrait translation through clinical edge-guidance.
 
 ![Skaitch Protocol](https://img.shields.io/badge/Streamlit-FF4B4B?logo=streamlit&logoColor=white)
 ![Python](https://img.shields.io/badge/Python-3.12+-3776AB?logo=python&logoColor=white)
@@ -32,19 +32,37 @@ The first phase of the pipeline operates immediately upon the submission of sema
 
 ---
 
-### 3. Phase II: Photorealistic Translation (DeepFaceDrawing)
+## 3. Phase II: Photorealistic Refinement (SDXL + ControlNet)
 
-The highest fidelity sketch is piped into Phase II, relying on the **PyTorch implementation** of DeepFaceDrawing (Xu-Justin version). This phase translates the sketch's morphological boundaries into a photorealistic manifold.
+The generation pipeline concludes with a high-fidelity refinement pass. Instead of a separate GAN, Skaitch leverages **SDXL ControlNet (Canny)** to translate the forensic sketch into a photorealistic portrait.
 
-*   **Semantic Manifold Projection:** The architecture consists of three core modules:
-    *   **Component Embedding (CE):** Encapsulates feature vectors for eyes, nose, mouth, and face silhouette.
-    *   **Feature Mapping (FM):** Map these embeddings into spatial feature maps.
-    *   **Image Synthesis (IS):sibA GAN-based generator that synthesizes the final photorealistic image from the feature maps.
-*   **Performance Optimization:** By utilizing native PyTorch, we eliminate the previous Just-In-Time (JIT) compilation bottlenecks found in Jittor. This allows for **sub-second inference** on the NVIDIA T4 GPU immediately upon the first generation.
+*   **Morphological Guidance:** The ControlNet module uses Canny edge detection on the generated sketch, ensuring the photorealistic output follows the source geometry with clinical precision.
+*   **Hyper-Realistic Refinement:** A dedicated SDXL pass with a "Professional Studio Portrait" prompt synthesizes skin textures, lighting, and fine facial features at native 1024x1024 resolution.
+*   **CodeFormer Integration:** All results undergo a final face restoration pass to ensure eye/mouth symmetry and remove potential diffusion artifacts.
 
 ---
 
-## 4. Setup & Deployment Guidelines
+## 4. Technical Evolution & Legacy Analysis
+
+Skaitch has transitioned through two major architectural phases for Photorealistic Translation.
+
+### 4.1 Legend: The Jittor/DFD Era (Legacy)
+Originally, Phase II relied on the **DeepFaceDrawing (DFD)** GAN framework using the Jittor compiler.
+- **Advantages:** Specialized manifold learning for "fixing" human sketches.
+- **Disadvantages:** Significant compilation overhead on modern Linux (GCC 13+ conflicts), rigid 512x512 output, and complex weight management (DVC/Baidu Pan dependencies).
+
+### 4.2 Modern: SDXL-ControlNet (Current)
+The current architecture utilizes a unified Diffusers/PyTorch stack.
+- **Advantages:** 
+    - **Stability:** Removes all JIT compilation and C++ compiler friction.
+    - **Resolution:** Native 1024x1024 output vs 512x512 legacy.
+    - **Maintenance:** Uses standard `.safetensors` weights via HuggingFace Hub.
+    - **Quality:** Higher dynamic range and superior skin texture synthesis.
+- **Disadvantages:** Higher VRAM requirement (~16GB+ recommended for peak throughput), though optimized for T4 via CPU offloading.
+
+---
+
+## 5. Setup & Deployment Guidelines
 
 ### I. Repository Clone & Requirements
 ```bash
@@ -54,22 +72,23 @@ cd Skaitch
 pip install -r requirements.txt
 ```
 
-### II. Automated Weights & Source Setup
-Skaitch now handles the entire setup of Phase II automatically. Simply run the application:
+### II. Automated Weights Setup
+Skaitch handles the entire setup of both Phase I and Phase II automatically. Simply run the application:
 ```bash
 streamlit run app.py
 ```
 
 **What happens during initialization:**
-1.  **SDXL & CodeFormer:** Downloaded to `/opt/dlami/nvme/models/` via HuggingFace and GitHub Releases.
-2.  **Phase II (PyTorch DFD):** The application will automatically clone the DeepFaceDrawing PyTorch repository and its 1GB+ weights directly into `external/DeepFaceDrawing/`.
-3.  **No Manual Intervention:** Unlike previous versions, you no longer need to manually download weights from Baidu Pan or Google Drive. Everything is sourced from GitHub mirrors.
+1.  **SDXL Base:** Downloaded to `/opt/dlami/nvme/models/sdxl/`.
+2.  **ControlNet Canny:** Downloaded to `/opt/dlami/nvme/models/controlnet-canny-sdxl/`.
+3.  **CodeFormer:** Fetched from GitHub Releases to `/opt/dlami/nvme/models/codeformer/`.
+4.  **No Manual Intervention:** All weights are sourced automatically from validated mirrors.
 
 ---
 
-## 5. User Interface (Streamlit)
+## 6. User Interface (Streamlit)
 
 Skaitch abstracts complex PyTorch interactions beneath an intuitive Streamlit browser application. 
 - **Telemetry Overview:** The sidebar reports real-time CUDA properties (Model Name, Available VRAM).
 - **Control Interface:** Options intelligently toggle based on "Free-Text" vs "Forensic Sketch Mode".
-- **Auto-Persistent Save Architecture:** Generated variants and resulting DeepFaceDrawing translations are locally cached under `data/`, guaranteeing total retention for investigative review.
+- **Auto-Persistent Save Architecture:** Generated variants and resulting Refinement translations are locally cached under `data/`.

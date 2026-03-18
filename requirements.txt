@@ -18,5 +18,5 @@ basicsr
 facexlib
 xformers
 
-# Note: DeepFaceDrawing (Phase 2) is automatically initialized via GitHub cloning
-# and runs on native PyTorch. No manual compiler setup is required.
+# Note: Photorealistic Refinement (Phase 2) is automatically initialized via SDXL ControlNet
+# and runs on native PyTorch/Diffusers. All weights are fetched to NVMe automatically.
