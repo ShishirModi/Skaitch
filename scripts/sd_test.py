@@ -7,13 +7,13 @@ import os
 # Allow importing prompt_builder from project root
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from diffusers import StableDiffusionPipeline
+from diffusers import StableDiffusionXLPipeline
 import torch
 from PIL import Image
-from prompt_builder import build_forensic_prompt, FORENSIC_DEFAULTS
+from prompt_builder import build_sdxl_forensic_prompt, FORENSIC_DEFAULTS
 
 # ===== CONFIG =====
-model_path = os.path.join(os.path.dirname(__file__), "..", "external", "stable_diffusion")
+model_path = "/opt/dlami/nvme/models/sdxl"
 output_dir = os.path.join(os.path.dirname(__file__), "..", "data")
 os.makedirs(output_dir, exist_ok=True)
 output_path = os.path.join(output_dir, "test_output.png")
@@ -35,7 +35,7 @@ sample_features = {
     "Distinguishing marks": "Scar on left cheek",
 }
 
-prompt, negative_prompt = build_forensic_prompt(
+prompt, negative_prompt = build_sdxl_forensic_prompt(
     sample_features,
     style="Pencil sketch",
     extra_details="",
@@ -43,19 +43,19 @@ prompt, negative_prompt = build_forensic_prompt(
 
 num_inference_steps = FORENSIC_DEFAULTS["num_inference_steps"]
 guidance_scale = FORENSIC_DEFAULTS["guidance_scale"]
-height = 512
-width = 512
+height = 1024
+width = 1024
 # ==================
 
 
 def main():
     print(f"Loading model from: {model_path}")
-    pipe = StableDiffusionPipeline.from_pretrained(model_path)
-    try:
-        pipe.enable_attention_slicing()
-    except Exception:
-        pass
-    pipe = pipe.to("cpu")
+    pipe = StableDiffusionXLPipeline.from_pretrained(
+        model_path, 
+        torch_dtype=torch.float16, 
+        use_safetensors=True
+    )
+    pipe = pipe.to("cuda")
 
     print(f"Prompt: {prompt}")
     print(f"Negative: {negative_prompt}")

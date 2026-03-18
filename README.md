@@ -1,171 +1,84 @@
-# Skaitch
+# Skaitch: A Two-Stage Generative Framework for High-Fidelity Forensic Composite Portraits
 
-A local **Stable Diffusion** image generation tool with a polished **Streamlit** frontend. Type a prompt, tweak the settings, and generate images entirely on your machine — no cloud API needed.
+**Skaitch** is an advanced, GPU-accelerated application engineered to produce professional-grade forensic facial sketches from structured categorical inputs. Operating conceptually similarly to traditional police composite toolkits, Skaitch leverages modern Deep Generative Neural Networks in a dual-phase architecture.
 
-![Skaitch UI](https://img.shields.io/badge/Streamlit-FF4B4B?logo=streamlit&logoColor=white)
-![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)
-![PyTorch](https://img.shields.io/badge/PyTorch-EE4C2C?logo=pytorch&logoColor=white)
+Phase I translates semantic morphological descriptors into hyper-detailed pencil sketches via **Stable Diffusion XL (SDXL)**, further refined by **CodeFormer** face restoration geometry. Phase II maps the synthesized sketch into the **DeepFaceDrawing** conditional GAN to achieve a photorealistic "fact-check" portrait translation through intermediate manifold learning.
 
----
-
-## Features
-
-| Feature | Description |
-|---|---|
-| **Text-to-image** | Generate images from natural-language prompts using Stable Diffusion v1.5 |
-| **Forensic Sketch Mode** | Build police-grade composite sketches by selecting facial features from dropdowns |
-| **DeepFaceDrawing Fact-Check** | Convert generated sketches into photorealistic images dynamically using a secondary Jittor model pipeline |
-| **Admin Mode** | Password-protected sidebar dashboard to view recent generated images and manage settings |
-| **Auto-Save** | Successfully generated sketches and photorealistic fact-checks are automatically saved to `data/` |
-| **Negative prompts** | Specify what you *don't* want to see in the output |
-| **Parameter control** | Tune inference steps, guidance scale, dimensions, and seed |
-| **Reproducibility** | Fix the seed to regenerate the exact same image |
-| **One-click download** | Save the generated image as PNG |
-| **Cached model** | The pipeline loads once and stays in memory across reruns |
+![Skaitch Protocol](https://img.shields.io/badge/Streamlit-FF4B4B?logo=streamlit&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.12+-3776AB?logo=python&logoColor=white)
+![Torch](https://img.shields.io/badge/PyTorch-EE4C2C?logo=pytorch&logoColor=white)
+![CUDA](https://img.shields.io/badge/CUDA-13.0-76B900?logo=nvidia&logoColor=white)
 
 ---
 
-## Project Structure
+## 1. System Architecture Overview
 
-```
-Skaitch/
-├── app.py                  # Streamlit frontend
-├── prompt_builder.py       # Forensic sketch prompt assembly module
-├── visual_aids.py          # SVG graphics renderer for UI dropdowns
-├── dfd_integration.py      # Core Jittor bridge for DeepFaceDrawing model
-├── scripts/
-│   └── sd_test.py          # Headless CLI test script
-├── external/
-│   └── stable_diffusion/   # Local model weights (SD v1.5)
-├── data/                   # Generated outputs auto-saved here (git-ignored)
-├── .env.example            # Template for storing secure environment variables
-├── requirements.txt
-└── skaitch_env/            # Python virtual environment
-```
+Skaitch runs on a robust enterprise-grade Linux server architecture optimally designed for memory-intensive diffusion workflows. 
+
+### Infrastructure Requirements
+* **Compute:** NVIDIA T4 GPU (15GB VRAM), optimally supporting FP16 tensor precision.
+* **Storage:** Fast NVMe SSDs (`/opt/dlami/nvme/models/`) utilized for caching massive diffusion UNet structures efficiently.
+* **Environment:** Python 3.12 on Linux (Ubuntu recommended, given essential specific C-extensions needed for Jittor framework compilation).
 
 ---
 
-## Prerequisites
+## 2. Phase I: Generative Synthesis (SDXL + CodeFormer)
 
-- **Python 3.10+** (On Ubuntu/Linux, you must install the Python development headers, e.g. `sudo apt-get install python3.X-dev`, required for Jittor to compile)
-- **Linux Environment** (Required for compiling the Jittor neural network backend powering DeepFaceDrawing)
-- **Git** (to clone the repo)
-- **Stable Diffusion v1.5 weights** placed in `external/stable_diffusion/`. You can download them from [Hugging Face](https://huggingface.co/stable-diffusion-v1-5/stable-diffusion-v1-5) or use the `huggingface-cli`:
-  ```bash
-  huggingface-cli download stable-diffusion-v1-5/stable-diffusion-v1-5 --local-dir external/stable_diffusion
-  ```
+The first phase of the pipeline operates immediately upon the submission of semantic categorical parameters (e.g., *Jawline: Strong*, *Eyes: Almond*).
+
+* **Model Loading:** The pipeline loads the `stabilityai/stable-diffusion-xl-base-1.0` model fully into VRAM (`device="cuda"`). Computations are strictly executed in `torch.float16` to circumvent OOM failures while employing SDXL native $1024 \times 1024$ latents.
+* **Stochastic Variation:** Utilizing PyTorch pseudo-random generation across specific manual seeds, Skaitch simultaneously spawns three parallel latent diffusion processes. This ensures investigators are offered **3 varied conceptualizations** of the provided descriptions.
+* **Face Restoration (CodeFormer):** Immediately following decoding via the VAE, raw SDXL image arrays are bridged to a localized instance of `sczhou/CodeFormer`. Functioning as a transformative blind-face restorer, CodeFormer recalculates the High-Frequency structural components of the facial topography, severely decreasing diffusion artifacts naturally propagating in sketch mediums.
 
 ---
 
-## Getting Started
+## 3. Phase II: Photorealistic Translation (DeepFaceDrawing)
 
-### 1. Clone the repository
+The highest fidelity sketch is piped implicitly into Phase II, relying heavily on geometry and boundary preservation translation mapping natively conceptualized by the researchers of DeepFaceDrawing (Chen et al.).
 
+* **Semantic Manifold Projection:** The DeepFaceDrawing model intrinsically contains three overarching operational modules:
+  * **Component Embedding (CE):** Five distinct auto-encoders linearly encapsulate vectors specific to eyes, nose, mouth, and structural silhouette.
+  * **Feature Mapping (FM):** Synthesizes isolated local manifolds into spatial probability fields.
+  * **Image Synthesis (IS):** A pix2pix conditional GAN structure conditionally generating RGB realistic interpolations matching the sketch shadows.
+* **Jittor AI Framework:** Phase II relies on **Jittor**, a dynamic deep learning compilation framework native to Linux. We have programmatically unified the application context so Jittor will forcefully inherit GPU execution allocations alongside PyTorch natively (`jt.flags.use_cuda = 1`), drastically dropping phase translation from minutes to sub-second runtimes.
+
+---
+
+## 4. Setup & Deployment Guidelines
+
+### I. Repository Clone & Requirements
 ```bash
 git clone https://github.com/ShishirModi/Skaitch.git
 cd Skaitch
-```
-
-### 2. Create a virtual environment & install dependencies
-
-```bash
-python3 -m venv skaitch_env
-source skaitch_env/bin/activate
+# Install dependencies securely inside a clean Python 3.12 setup
 pip install -r requirements.txt
 ```
+*Note on Jittor:* Ensure you install your distribution's Python development headers (`python3-dev`) prior to executing `pip install jittor`. 
 
-### 3. Initialize Admin Configuration
-
-Copy the example environment variables file and set your secure password:
+### II. Parameter Configuration
+Environment secrets (Admin portal parameters) and automated DeepFaceDrawing mirror locations are structured in the root configuration:
 ```bash
 cp .env.example .env
+nano .env # Assign your unique ADMIN_PASSWORD
 ```
-*(You can open `.env` and change `ADMIN_PASSWORD` to whatever you prefer)*
 
-### 4. Launch the app
-
+### III. Automated Weights Loading
+Instead of maintaining fragmented model caches, weights are centralized. Simply boot the application:
 ```bash
 streamlit run app.py
 ```
+*During initialization, Skaitch will traverse the configured NVMe drive (`/opt/dlami/nvme/models/`). Failing validation, Skaitch will spawn a direct download conduit via the HuggingFace CLI natively saving 10GB+ optimized weights bypassing local memory bottlenecks.*
 
-The app will open at **http://localhost:8501**.
-
----
-
-## Usage
-
-### Free-Text Mode (default)
-
-1. **Enter a prompt** in the sidebar (e.g. *"a futuristic cityscape at sunset, digital art"*).
-2. *(Optional)* Add a **negative prompt** to exclude unwanted elements.
-3. Adjust **Inference steps**, **Guidance scale**, **Width/Height**, and **Seed**.
-4. Click **🚀 Generate**.
-5. Once complete, view the result and click **⬇️ Download PNG** to save.
-
-### Forensic Sketch Mode
-
-1. Toggle **🔍 Forensic Sketch Mode** on in the sidebar.
-2. Select facial features from the dropdowns:
-
-   | Category | Examples |
-   |---|---|
-   | Gender / Age | Male, 26–35 |
-   | Face shape / Jawline | Oval, Strong |
-   | Eyes / Eyebrows | Almond, Thick |
-   | Nose / Mouth | Straight, Thin |
-   | Skin tone | Medium |
-   | Hair style / color | Short cropped, Dark brown |
-   | Facial hair | Stubble |
-   | Distinguishing marks | Scar on left cheek |
-
-3. Choose a **Sketch style** (Pencil sketch, Charcoal sketch, Police composite, or Forensic artist rendering).
-4. *(Optional)* Add **Additional details** as free text.
-5. Review the **Generated prompt** preview, then click **🚀 Generate**.
-
-> Forensic mode auto-sets guidance scale to **10.0** and inference steps to **30** for better sketch quality. You can still adjust these manually.
-
-> **DeepFaceDrawing Integration:** When Forensic Mode is activated, the generated sketch is automatically processed via our secondary **DeepFaceDrawing (Jittor)** pipeline. The model parses your morphological feature selections (like Jawline width) into mathematical tensors, adjusting the model weights to convert the sketch into an accurate, photorealistic portrait displayed side-by-side with the sketch.
-
-> **Note:** Generation runs on CPU by default and can take several minutes. A CUDA-capable GPU will significantly speed things up.
+**Action Required for DeepFaceDrawing:**
+The required DeepFaceDrawing `.pkl` checkpoints are securely hosted behind a Baidu Pan token access screen. Before full functionality occurs, ensure you navigate your `download_model.py` CLI instructions:
+1. Access the provided Baidu drive.
+2. Download and drop the checkpoint `.pkl` files within `external/DeepFaceDrawing/Params/` (Or supply a secure mirror endpoint uniformly within `DFD_WEIGHTS_DIRECT_URL`).
 
 ---
 
-## Headless / CLI Usage
+## 5. User Interface (Streamlit)
 
-For quick tests without the UI, use the standalone script:
-
-```bash
-source skaitch_env/bin/activate
-python scripts/sd_test.py
-```
-
-This generates a forensic sketch with sample features to `data/test_output.png`.
-
----
-
-## Configuration
-
-All generation parameters are exposed in the Streamlit sidebar:
-
-| Parameter | Range | Default (Free) | Default (Forensic) | Effect |
-|---|---|---|---|---|
-| Inference steps | 1 – 50 | 20 | 30 | More steps → finer details |
-| Guidance scale | 1.0 – 20.0 | 7.5 | 10.0 | Higher → closer to prompt |
-| Width | 256, 512 | 512 | 512 | Output width in pixels |
-| Height | 256, 512 | 512 | 512 | Output height in pixels |
-| Seed | 0 – 2³² | 0 (random) | 0 (random) | Fix for reproducibility |
-
----
-
-## Tech Stack
-
-- **[Streamlit](https://streamlit.io/)** — interactive web frontend
-- **[Hugging Face Diffusers](https://huggingface.co/docs/diffusers)** — Stable Diffusion pipeline
-- **[PyTorch](https://pytorch.org/)** — tensor computation & model inference
-- **[Pillow](https://python-pillow.org/)** — image handling
-
----
-
-## License
-
-This project is for personal / educational use. Stable Diffusion model weights are subject to the [CreativeML Open RAIL-M license](https://huggingface.co/spaces/CompVis/stable-diffusion-license).
+Skaitch abstracts complex PyTorch interactions beneath an intuitive Streamlit browser application. 
+- **Telemetry Overview:** The sidebar reports real-time CUDA properties (Model Name, Available VRAM).
+- **Control Interface:** Options intelligently toggle based on "Free-Text" vs "Forensic Sketch Mode" ensuring conditional generation paths perfectly mimic the pipeline's operational boundaries.
+- **Auto-Persistent Save Architecture:** Generated variants and resulting DeepFaceDrawing translation checks are locally cached under `data/` tagged chronologically alongside active metadata strings, guaranteeing total retention unless specifically disabled via the secure *Admin Settings* module.

@@ -1,16 +1,23 @@
-numpy==1.26.4
+numpy
 opencv-python
-torch
+torch>=2.3.0
 torchvision
 torchaudio
-diffusers
-transformers
+diffusers>=0.27.0
+transformers>=4.40.0
 safetensors
-accelerate
+accelerate>=0.30.0
 huggingface_hub
 pillow
 streamlit
-jittor
 scipy
 opencv-python-headless
 python-dotenv
+controlnet-aux
+basicsr
+facexlib
+xformers
+
+# Note: 'jittor' is required for DeepFaceDrawing (Phase 2), but must be 
+# installed separately on Linux due to specific compilation requirements:
+# python -m pip install jittor

@@ -19,9 +19,11 @@ def get_combine_model():
     global _combine_model
     if _combine_model is None:
         import jittor as jt
-        # Attempt to enable CUDA if available, but default to CPU since Streamlit is likely CPU bound
+        # Attempt to enable CUDA if available
         try:
-            if jt.has_cuda:
+            import torch
+            has_torch_cuda = torch.cuda.is_available()
+            if getattr(jt, 'has_cuda', False) or has_torch_cuda:
                 jt.flags.use_cuda = 1
             else:
                 jt.flags.use_cuda = 0

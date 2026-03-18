@@ -45,7 +45,7 @@ VISUAL_AIDS = {
         "Downturned": f'<path d="M 15 40 Q 50 30 80 60 Q 50 80 15 40 Z" {S_EYE} /><circle cx="48" cy="52" r="9" {S_EYE} />',
     },
     "Nose": {
-        "Straight": f'<path d="M 50 20 L 50 70 M 35 70 Q 50 85 65 70" {S_NOSE} />',
+        "Straight": f'<path d="M 43 20 L 43 65 M 57 20 L 57 65 M 35 70 Q 50 82 65 70" {S_NOSE} />',
         "Broad": f'<path d="M 50 20 L 50 60 M 25 70 Q 50 90 75 70" {S_NOSE} />',
         "Narrow": f'<path d="M 50 20 L 50 75 M 42 75 Q 50 85 58 75" {S_NOSE} />',
         "Aquiline": f'<path d="M 50 20 Q 70 45 50 70 M 35 70 Q 50 85 65 70" {S_NOSE} />',

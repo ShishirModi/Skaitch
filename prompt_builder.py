@@ -71,10 +71,10 @@ SKETCH_STYLES = [
 # ─── Negative Prompt ──────────────────────────────────────────────────────────
 
 FORENSIC_NEGATIVE = (
-    "color photograph, painting, cartoon, anime, 3d render, CGI, "
-    "blurry, low quality, low resolution, distorted face, extra fingers, "
-    "deformed features, watermark, signature, text, frame, border, "
-    "background clutter, multiple people"
+    "color photograph, oil painting, cartoon, anime, 3d render, CGI, watercolor, "
+    "blurry, low quality, low resolution, pixelated, distorted face, asymmetric face, "
+    "extra fingers, deformed features, watermark, signature, text, frame, border, "
+    "background clutter, multiple people, accessories, jewelry, glasses"
 )
 
 # ─── Recommended Defaults ────────────────────────────────────────────────────
@@ -167,9 +167,9 @@ def build_forensic_prompt(
 
     # Style tokens for quality
     quality_tokens = (
-        "front-facing portrait, centered composition, "
-        "white background, high detail, sharp lines, "
-        "professional forensic sketch, police composite art style"
+        "front-facing portrait, centered composition, white background, "
+        "ultra-high detail, sharp facial lines, professional forensic composite, "
+        "photorealistic pencil rendering, 8k resolution, studio lighting"
     )
 
     prompt = ", ".join(parts) + ", " + quality_tokens
@@ -179,3 +179,12 @@ def build_forensic_prompt(
         prompt += ", " + extra_details.strip()
 
     return prompt, FORENSIC_NEGATIVE
+
+def build_sdxl_forensic_prompt(
+    features: dict[str, str],
+    style: str = "Pencil sketch",
+    extra_details: str = "",
+) -> tuple[str, str]:
+    """Wrapper that calls build_forensic_prompt and appends SDXL boosters."""
+    prompt, neg = build_forensic_prompt(features, style, extra_details)
+    return prompt + ", best quality, masterpiece, highly detailed face", neg
