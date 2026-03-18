@@ -56,6 +56,8 @@ def check_and_download_dfd():
     print("DFD_WEIGHTS_DIRECT_URL='https://you-mirror-link/weights.zip'")
     print("="*80 + "\n")
 
+from huggingface_hub import snapshot_download
+
 def check_and_download_models():
     """Checks if models are present on the NVMe drive and downloads them if not."""
     os.makedirs(SDXL_OUTPUT_DIR, exist_ok=True)
@@ -63,13 +65,13 @@ def check_and_download_models():
     
     if not is_model_downloaded(SDXL_OUTPUT_DIR):
         print(f"Downloading {SDXL_MODEL_ID} to {SDXL_OUTPUT_DIR}...")
-        subprocess.run(["huggingface-cli", "download", SDXL_MODEL_ID, "--local-dir", SDXL_OUTPUT_DIR], check=True)
+        snapshot_download(repo_id=SDXL_MODEL_ID, local_dir=SDXL_OUTPUT_DIR)
     else:
         print(f"✅ SDXL model already exists at {SDXL_OUTPUT_DIR}.")
         
     if not is_model_downloaded(CODEFORMER_OUTPUT_DIR):
         print(f"Downloading {CODEFORMER_MODEL_ID} to {CODEFORMER_OUTPUT_DIR}...")
-        subprocess.run(["huggingface-cli", "download", CODEFORMER_MODEL_ID, "--local-dir", CODEFORMER_OUTPUT_DIR], check=True)
+        snapshot_download(repo_id=CODEFORMER_MODEL_ID, local_dir=CODEFORMER_OUTPUT_DIR)
     else:
         print(f"✅ CodeFormer model already exists at {CODEFORMER_OUTPUT_DIR}.")
 
