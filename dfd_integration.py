@@ -11,6 +11,12 @@ from PIL import Image
 dfd_dir = os.path.join(os.path.dirname(__file__), "external", "DeepFaceDrawing")
 sys.path.append(dfd_dir)
 
+# FORCE Jittor to use GCC 12 to avoid CUDA 12.2 / GCC 13 mismatch
+# These MUST be set before 'import jittor'
+os.environ["cc_path"] = "/usr/bin/g++-12"
+os.environ["CC"] = "/usr/bin/gcc-12"
+os.environ["CXX"] = "/usr/bin/g++-12"
+
 # Global instance so we don't reload the Jittor model on every click
 _combine_model = None
 
