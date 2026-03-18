@@ -1,5 +1,6 @@
 # Ignore virtual environment
 skaitch_env/
+venv/
 
 # Ignore system files
 .DS_Store
