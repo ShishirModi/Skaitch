@@ -37,7 +37,13 @@ def get_combine_model():
         original_cwd = os.getcwd()
         os.chdir(dfd_dir)
         try:
-            _combine_model = CombineModel()
+            try:
+                _combine_model = CombineModel()
+            except RuntimeError as e:
+                print(f"⚠️ Jittor CUDA compilation failed (likely GCC/NVCC mismatch): {e}")
+                print("⚠️ Falling back to DeepFaceDrawing Jittor CPU execution...")
+                jt.flags.use_cuda = 0
+                _combine_model = CombineModel()
         finally:
             os.chdir(original_cwd)
     return _combine_model
