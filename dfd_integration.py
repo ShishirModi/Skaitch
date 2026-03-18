@@ -1,125 +1,80 @@
 # File: dfd_integration.py
-# Purpose: Bridge the Skaitch Streamlit UI parameters to the DeepFaceDrawing Jittor model.
+# Purpose: Bridge the Skaitch Streamlit UI parameters to the PyTorch DeepFaceDrawing model (Xu-Justin implementation).
 
 import os
 import sys
+import torch
 import numpy as np
-import cv2
 from PIL import Image
+from torchvision import transforms
 
 # Setup DeepFaceDrawing import path
 dfd_dir = os.path.join(os.path.dirname(__file__), "external", "DeepFaceDrawing")
-sys.path.append(dfd_dir)
+if dfd_dir not in sys.path:
+    sys.path.append(dfd_dir)
 
-# FORCE Jittor to use GCC 12 to avoid CUDA 12.2 / GCC 13 mismatch
-# These MUST be set before 'import jittor'
-os.environ["cc_path"] = "/usr/bin/g++-12"
-os.environ["CC"] = "/usr/bin/gcc-12"
-os.environ["CXX"] = "/usr/bin/g++-12"
+# Global instance so we don't reload the model on every click
+_dfd_model = None
 
-# Global instance so we don't reload the Jittor model on every click
-_combine_model = None
-
-def get_combine_model():
-    """Lazy load the CombineModel to save memory until clicked."""
-    global _combine_model
-    if _combine_model is None:
-        import jittor as jt
-        # Attempt to enable CUDA if available
+def get_dfd_model():
+    """Lazy load the PyTorch DeepFaceDrawing model."""
+    global _dfd_model
+    if _dfd_model is None:
         try:
-            import torch
-            has_torch_cuda = torch.cuda.is_available()
-            if getattr(jt, 'has_cuda', False) or has_torch_cuda:
-                jt.flags.use_cuda = 1
-            else:
-                jt.flags.use_cuda = 0
-        except Exception:
-            jt.flags.use_cuda = 0
+            import models
+        except ImportError:
+            # If standard import fails, try relative import if possible or wait for download
+            return None
+
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
-        from CombineModel_jt import CombineModel
-
-        # Before instantiating the model, we MUST switch the CWD temporarily because
-        # DeepFaceDrawing loads checkpoint paths relative to its own root directory
-        original_cwd = os.getcwd()
-        os.chdir(dfd_dir)
-        try:
-            try:
-                _combine_model = CombineModel()
-            except RuntimeError as e:
-                print(f"⚠️ Jittor CUDA compilation failed (likely GCC/NVCC mismatch): {e}")
-                print("⚠️ Falling back to DeepFaceDrawing Jittor CPU execution...")
-                jt.flags.use_cuda = 0
-                _combine_model = CombineModel()
-        finally:
-            os.chdir(original_cwd)
-    return _combine_model
-
-def calculate_weights(features: dict) -> list[float]:
-    """
-    Map Streamlit selected features to DeepFaceDrawing weights.
-    Returns: [eye1, eye2, nose, mouth, (bg/face_base)]
-    """
-    # Default weights [eye1, eye2, nose, mouth, base]
-    weights = [0.8, 0.8, 0.8, 0.8, 0.8]
-
-    # Adjust based on eyes
-    eyes = features.get("Eyes", "")
-    if eyes in ["Wide-set", "Close-set"]:
-        weights[0] += 0.15 # Heavier emphasis on eye placement
-        weights[1] += 0.15
+        # Initialize model with modules used in Xu-Justin's inference script
+        model = models.DeepFaceDrawing(
+            CE=True, CE_encoder=True, CE_decoder=False,
+            FM=True, FM_decoder=True,
+            IS=True, IS_generator=True, IS_discriminator=False,
+            manifold=False
+        )
         
-    # Adjust based on nose
-    nose = features.get("Nose", "")
-    if nose in ["Broad", "Wide bridge", "Bulbous"]:
-        weights[2] += 0.20 # Force wider nose rendering
-    elif nose in ["Narrow", "Aquiline"]:
-        weights[2] -= 0.10
-
-    # Adjust based on mouth
-    mouth = features.get("Mouth / Lips", "")
-    if mouth in ["Full", "Heavy lower lip", "Heavy upper lip"]:
-        weights[3] += 0.15
-    elif mouth == "Thin":
-        weights[3] -= 0.10
-
-    # Ensure weights are between 0 and 1
-    return [max(0.1, min(w, 1.0)) for w in weights]
+        # Weights are expected in external/DeepFaceDrawing/checkpoints/
+        weights_path = os.path.join(dfd_dir, "checkpoints")
+        if os.path.exists(weights_path):
+            model.load(weights_path, map_location=device)
+        
+        model.to(device)
+        model.eval()
+        _dfd_model = model
+        
+    return _dfd_model
 
 def run_dfd(image_pil: Image.Image, features: dict) -> Image.Image:
     """
-    Takes a Stable Diffusion generated sketch (PIL Image) and 
-    processes it through DeepFaceDrawing to produce a photorealistic face.
+    Inference pass for the PyTorch-based DeepFaceDrawing implementation.
     """
-    # 1. Convert PIL to OpenCV format (RGB -> BGR)
-    mat_img = cv2.cvtColor(np.array(image_pil), cv2.COLOR_RGB2BGR)
+    model = get_dfd_model()
+    if model is None:
+        raise RuntimeError("DeepFaceDrawing model not initialized. Ensure external/DeepFaceDrawing is populated.")
 
-    # 2. Resize to 512x512 as expected by DeepFaceDrawing
-    mat_img = cv2.resize(mat_img, (512, 512), interpolation=cv2.INTER_CUBIC)
-    
-    # 3. Load model
-    model = get_combine_model()
+    device = next(model.parameters()).device
 
-    # 4. Map Gender (DeepFaceDrawing expects 1 for Male, 0 for Female)
-    gender = features.get("Gender", "Male")
-    model.sex = 1 if gender == "Male" else 0
+    # 1. Preprocessing (matches Xu-Justin's transform_sketch)
+    # Grayscale -> Resize 512 -> ToTensor
+    preprocess = transforms.Compose([
+        transforms.Grayscale(),
+        transforms.Resize((512, 512)),
+        transforms.ToTensor()
+    ])
+    
+    input_tensor = preprocess(image_pil).unsqueeze(0).to(device)
 
-    # 5. Apply calculated weights
-    eye1, eye2, nose, mouth, base = calculate_weights(features)
-    model.part_weight['eye1'] = eye1
-    model.part_weight['eye2'] = eye2
-    model.part_weight['nose'] = nose
-    model.part_weight['mouth'] = mouth
-    model.part_weight[''] = base
+    # 2. Inference
+    with torch.no_grad():
+        # result is a tensor (1, 3, 512, 512)
+        result = model(input_tensor)
     
-    # 6. Run Inference
-    # predict_shadow() generates the image and stores it in model.generated
-    original_cwd = os.getcwd()
-    os.chdir(dfd_dir) # Required for the inner logic of predict_shadow which assumes local scope
-    try:
-        model.predict_shadow(mat_img)
-    finally:
-        os.chdir(original_cwd)
+    # 3. Postprocessing (Tensor to PIL)
+    # The models usually output in [0, 1] range
+    res_img = result[0].cpu().clamp(0, 1)
+    res_pil = transforms.ToPILImage()(res_img)
     
-    # 7. Convert output BGR back to PIL RGB
-    output_rgb = cv2.cvtColor(model.generated, cv2.COLOR_BGR2RGB)
-    return Image.fromarray(output_rgb)
+    return res_pil

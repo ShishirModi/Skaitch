@@ -8,9 +8,13 @@ load_dotenv()
 SDXL_MODEL_ID = "stabilityai/stable-diffusion-xl-base-1.0"
 CODEFORMER_MODEL_URL = "https://github.com/sczhou/CodeFormer/releases/download/v0.1.0/codeformer.pth"
 
+# New PyTorch DFD Repository and Weights
+DFD_REPO_URL = "https://github.com/Xu-Justin/DeepFaceDrawing.git"
+DFD_WEIGHTS_REPO_URL = "https://github.com/Xu-Justin/DeepFaceDrawing-Weight.git"
+
 SDXL_OUTPUT_DIR = "/opt/dlami/nvme/models/sdxl"
 CODEFORMER_OUTPUT_DIR = "/opt/dlami/nvme/models/codeformer"
-DFD_PARAMS_DIR = os.path.join(os.path.dirname(__file__), "external", "DeepFaceDrawing", "Params")
+DFD_DIR = os.path.join(os.path.dirname(__file__), "external", "DeepFaceDrawing")
 
 def is_model_downloaded(directory):
     if not os.path.exists(directory):
@@ -20,41 +24,39 @@ def is_model_downloaded(directory):
     return len(files) > 2
 
 def check_and_download_dfd():
-    """Checks if DeepFaceDrawing weights exist, optionally downloads them, or alerts user."""
-    os.makedirs(DFD_PARAMS_DIR, exist_ok=True)
+    """Clones the PyTorch DFD repo and its weights from GitHub."""
+    os.makedirs(os.path.dirname(DFD_DIR), exist_ok=True)
     
-    # Check if any .pkl files exist in the Params directory
-    has_pkl = any(f.endswith('.pkl') for f in os.listdir(DFD_PARAMS_DIR))
-    if has_pkl:
-        print(f"✅ DeepFaceDrawing weights found in {DFD_PARAMS_DIR}.")
-        return
+    # 1. Clone the Source Code Repository if missing
+    if not os.path.exists(DFD_DIR):
+        print(f"Cloning DeepFaceDrawing (PyTorch) source from {DFD_REPO_URL}...")
+        subprocess.run(["git", "clone", DFD_REPO_URL, DFD_DIR], check=True)
+    else:
+        print(f"✅ DeepFaceDrawing source already exists at {DFD_DIR}.")
 
-    # If missing, try to download via ENV direct URL if provided
-    direct_url = os.environ.get("DFD_WEIGHTS_DIRECT_URL")
-    if direct_url and direct_url.strip():
-        print(f"Downloading DeepFaceDrawing weights from {direct_url}...")
-        try:
-            # Simple download assuming ZIP or single file. If it's a ZIP, it would need extraction.
-            filename = direct_url.split("/")[-1] or "dfd_weights.zip"
-            dest = os.path.join(DFD_PARAMS_DIR, filename)
-            urllib.request.urlretrieve(direct_url, dest)
-            print(f"✅ Downloaded to {dest}. Note: You may need to unzip this manually.")
-            return
-        except Exception as e:
-            print(f"⚠️ Failed to download from direct URL: {e}")
-
-    # Fallback alert instruction
-    print("\n" + "="*80)
-    print("🚨 ACTION REQUIRED: MISSING DEEPFACEDRAWING WEIGHTS 🚨")
-    print("The official DeepFaceDrawing pre-trained models are hosted on Baidu Pan,")
-    print("which cannot be downloaded programmatically without an account session.")
-    print("Please download them manually:")
-    print("Link: https://pan.baidu.com/s/1f1S9t4T5X5J0CDZ7AqTfMg")
-    print("Code: wiu9")
-    print(f"Extract the .pkl files into: {DFD_PARAMS_DIR}")
-    print("Or provide a direct URL mirroring the weights in the .env file:")
-    print("DFD_WEIGHTS_DIRECT_URL='https://you-mirror-link/weights.zip'")
-    print("="*80 + "\n")
+    # 2. Clone/Download Weights
+    # The PyTorch version expects weights in a 'checkpoints' directory
+    weights_dir = os.path.join(DFD_DIR, "checkpoints")
+    if not os.path.exists(weights_dir) or len(os.listdir(weights_dir)) < 3:
+        print(f"Cloning DeepFaceDrawing Weights from {DFD_WEIGHTS_REPO_URL}...")
+        # Clone into a temporary dir and move contents to avoid nested repo issues
+        tmp_weights = os.path.join(os.path.dirname(DFD_DIR), "dfd_weights_tmp")
+        if os.path.exists(tmp_weights):
+            subprocess.run(["rm", "-rf", tmp_weights])
+        subprocess.run(["git", "clone", DFD_WEIGHTS_REPO_URL, tmp_weights], check=True)
+        
+        os.makedirs(weights_dir, exist_ok=True)
+        # Move all contents from tmp_weights/ to weights_dir/
+        for item in os.listdir(tmp_weights):
+            if item == ".git": continue
+            s = os.path.join(tmp_weights, item)
+            d = os.path.join(weights_dir, item)
+            subprocess.run(["mv", s, d])
+        
+        subprocess.run(["rm", "-rf", tmp_weights])
+        print(f"✅ DeepFaceDrawing weights installed successfully in {weights_dir}.")
+    else:
+        print(f"✅ DeepFaceDrawing weights already exist in {weights_dir}.")
 
 from huggingface_hub import snapshot_download
 

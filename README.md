@@ -32,15 +32,15 @@ The first phase of the pipeline operates immediately upon the submission of sema
 
 ---
 
-## 3. Phase II: Photorealistic Translation (DeepFaceDrawing)
+### 3. Phase II: Photorealistic Translation (DeepFaceDrawing)
 
-The highest fidelity sketch is piped implicitly into Phase II, relying heavily on geometry and boundary preservation translation mapping natively conceptualized by the researchers of DeepFaceDrawing (Chen et al.).
+The highest fidelity sketch is piped into Phase II, relying on the **PyTorch implementation** of DeepFaceDrawing (Xu-Justin version). This phase translates the sketch's morphological boundaries into a photorealistic manifold.
 
-* **Semantic Manifold Projection:** The DeepFaceDrawing model intrinsically contains three overarching operational modules:
-  * **Component Embedding (CE):** Five distinct auto-encoders linearly encapsulate vectors specific to eyes, nose, mouth, and structural silhouette.
-  * **Feature Mapping (FM):** Synthesizes isolated local manifolds into spatial probability fields.
-  * **Image Synthesis (IS):** A pix2pix conditional GAN structure conditionally generating RGB realistic interpolations matching the sketch shadows.
-* **Jittor AI Framework:** Phase II relies on **Jittor**, a dynamic deep learning compilation framework native to Linux. We have programmatically unified the application context so Jittor will forcefully inherit GPU execution allocations alongside PyTorch natively (`jt.flags.use_cuda = 1`), drastically dropping phase translation from minutes to sub-second runtimes.
+*   **Semantic Manifold Projection:** The architecture consists of three core modules:
+    *   **Component Embedding (CE):** Encapsulates feature vectors for eyes, nose, mouth, and face silhouette.
+    *   **Feature Mapping (FM):** Map these embeddings into spatial feature maps.
+    *   **Image Synthesis (IS):sibA GAN-based generator that synthesizes the final photorealistic image from the feature maps.
+*   **Performance Optimization:** By utilizing native PyTorch, we eliminate the previous Just-In-Time (JIT) compilation bottlenecks found in Jittor. This allows for **sub-second inference** on the NVIDIA T4 GPU immediately upon the first generation.
 
 ---
 
@@ -50,29 +50,20 @@ The highest fidelity sketch is piped implicitly into Phase II, relying heavily o
 ```bash
 git clone https://github.com/ShishirModi/Skaitch.git
 cd Skaitch
-# Install dependencies securely inside a clean Python 3.12 setup
+# Install modern dependencies (Torch 2.3+, Diffusers, Transformers)
 pip install -r requirements.txt
 ```
-*Note on Jittor:* Ensure you install your distribution's Python development headers (`python3-dev`) prior to executing `pip install jittor`. 
 
-### II. Parameter Configuration
-Environment secrets (Admin portal parameters) and automated DeepFaceDrawing mirror locations are structured in the root configuration:
-```bash
-cp .env.example .env
-nano .env # Assign your unique ADMIN_PASSWORD
-```
-
-### III. Automated Weights Loading
-Instead of maintaining fragmented model caches, weights are centralized. Simply boot the application:
+### II. Automated Weights & Source Setup
+Skaitch now handles the entire setup of Phase II automatically. Simply run the application:
 ```bash
 streamlit run app.py
 ```
-*During initialization, Skaitch will traverse the configured NVMe drive (`/opt/dlami/nvme/models/`). Failing validation, Skaitch will spawn direct download conduits natively via the HuggingFace Python API (for SDXL) and GitHub Releases (for CodeFormer). This ensures 10GB+ of optimized weights are saved directly to the high-throughput drives, bypassing local memory bottlenecks.*
 
-**Action Required for DeepFaceDrawing:**
-The required DeepFaceDrawing `.pkl` checkpoints are securely hosted behind a Baidu Pan token access screen. Before full functionality occurs, ensure you navigate your `download_model.py` CLI instructions:
-1. Access the provided Baidu drive.
-2. Download and drop the checkpoint `.pkl` files within `external/DeepFaceDrawing/Params/` (Or supply a secure mirror endpoint uniformly within `DFD_WEIGHTS_DIRECT_URL`).
+**What happens during initialization:**
+1.  **SDXL & CodeFormer:** Downloaded to `/opt/dlami/nvme/models/` via HuggingFace and GitHub Releases.
+2.  **Phase II (PyTorch DFD):** The application will automatically clone the DeepFaceDrawing PyTorch repository and its 1GB+ weights directly into `external/DeepFaceDrawing/`.
+3.  **No Manual Intervention:** Unlike previous versions, you no longer need to manually download weights from Baidu Pan or Google Drive. Everything is sourced from GitHub mirrors.
 
 ---
 
@@ -80,5 +71,5 @@ The required DeepFaceDrawing `.pkl` checkpoints are securely hosted behind a Bai
 
 Skaitch abstracts complex PyTorch interactions beneath an intuitive Streamlit browser application. 
 - **Telemetry Overview:** The sidebar reports real-time CUDA properties (Model Name, Available VRAM).
-- **Control Interface:** Options intelligently toggle based on "Free-Text" vs "Forensic Sketch Mode" ensuring conditional generation paths perfectly mimic the pipeline's operational boundaries.
-- **Auto-Persistent Save Architecture:** Generated variants and resulting DeepFaceDrawing translation checks are locally cached under `data/` tagged chronologically alongside active metadata strings, guaranteeing total retention unless specifically disabled via the secure *Admin Settings* module.
+- **Control Interface:** Options intelligently toggle based on "Free-Text" vs "Forensic Sketch Mode".
+- **Auto-Persistent Save Architecture:** Generated variants and resulting DeepFaceDrawing translations are locally cached under `data/`, guaranteeing total retention for investigative review.
