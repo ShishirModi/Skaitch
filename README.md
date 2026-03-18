@@ -67,7 +67,7 @@ Instead of maintaining fragmented model caches, weights are centralized. Simply 
 ```bash
 streamlit run app.py
 ```
-*During initialization, Skaitch will traverse the configured NVMe drive (`/opt/dlami/nvme/models/`). Failing validation, Skaitch will spawn a direct download conduit via the HuggingFace CLI natively saving 10GB+ optimized weights bypassing local memory bottlenecks.*
+*During initialization, Skaitch will traverse the configured NVMe drive (`/opt/dlami/nvme/models/`). Failing validation, Skaitch will spawn direct download conduits natively via the HuggingFace Python API (for SDXL) and GitHub Releases (for CodeFormer). This ensures 10GB+ of optimized weights are saved directly to the high-throughput drives, bypassing local memory bottlenecks.*
 
 **Action Required for DeepFaceDrawing:**
 The required DeepFaceDrawing `.pkl` checkpoints are securely hosted behind a Baidu Pan token access screen. Before full functionality occurs, ensure you navigate your `download_model.py` CLI instructions:

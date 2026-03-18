@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 SDXL_MODEL_ID = "stabilityai/stable-diffusion-xl-base-1.0"
-CODEFORMER_MODEL_ID = "sczhou/CodeFormer"
+CODEFORMER_MODEL_URL = "https://github.com/sczhou/CodeFormer/releases/download/v0.1.0/codeformer.pth"
 
 SDXL_OUTPUT_DIR = "/opt/dlami/nvme/models/sdxl"
 CODEFORMER_OUTPUT_DIR = "/opt/dlami/nvme/models/codeformer"
@@ -69,9 +69,11 @@ def check_and_download_models():
     else:
         print(f"✅ SDXL model already exists at {SDXL_OUTPUT_DIR}.")
         
-    if not is_model_downloaded(CODEFORMER_OUTPUT_DIR):
-        print(f"Downloading {CODEFORMER_MODEL_ID} to {CODEFORMER_OUTPUT_DIR}...")
-        snapshot_download(repo_id=CODEFORMER_MODEL_ID, local_dir=CODEFORMER_OUTPUT_DIR)
+    # Check CodeFormer (GitHub Release)
+    codeformer_path = os.path.join(CODEFORMER_OUTPUT_DIR, "codeformer.pth")
+    if not os.path.exists(codeformer_path):
+        print(f"Downloading CodeFormer to {codeformer_path}...")
+        urllib.request.urlretrieve(CODEFORMER_MODEL_URL, codeformer_path)
     else:
         print(f"✅ CodeFormer model already exists at {CODEFORMER_OUTPUT_DIR}.")
 
