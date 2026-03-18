@@ -713,9 +713,9 @@ if generate:
 
             if dfd_success:
                 st.image(dfd_image, use_container_width=True)
-                st.caption(f"*DeepFaceDrawing (Jittor)*")
+                st.caption(f"*DeepFaceDrawing (PyTorch)*")
             else:
-                st.error(f"DeepFaceDrawing failed: {dfd_error}\n\nEnsure you are on a compatible Linux environment with Jittor compiled.")
+                st.error(f"DeepFaceDrawing failed: {dfd_error}\n\nEnsure that the PyTorch models in `external/DeepFaceDrawing` are correctly initialized.")
 
     else:
         # Standard layout for free-text mode

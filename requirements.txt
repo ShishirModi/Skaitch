@@ -18,6 +18,5 @@ basicsr
 facexlib
 xformers
 
-# Note: 'jittor' is required for DeepFaceDrawing (Phase 2), but must be 
-# installed separately on Linux due to specific compilation requirements:
-# python -m pip install jittor
+# Note: DeepFaceDrawing (Phase 2) is automatically initialized via GitHub cloning
+# and runs on native PyTorch. No manual compiler setup is required.

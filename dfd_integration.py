@@ -17,33 +17,54 @@ if dfd_dir not in sys.path:
 _dfd_model = None
 
 def get_dfd_model():
-    """Lazy load the PyTorch DeepFaceDrawing model."""
+    """Lazy load the PyTorch DeepFaceDrawing model with strict path priority."""
     global _dfd_model
     if _dfd_model is None:
-        try:
-            import models
-        except ImportError:
-            # If standard import fails, try relative import if possible or wait for download
+        if not os.path.exists(dfd_dir):
             return None
 
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        # Force sys.path priority for the external repo
+        if dfd_dir not in sys.path:
+            sys.path.insert(0, dfd_dir)
         
-        # Initialize model with modules used in Xu-Justin's inference script
-        model = models.DeepFaceDrawing(
-            CE=True, CE_encoder=True, CE_decoder=False,
-            FM=True, FM_decoder=True,
-            IS=True, IS_generator=True, IS_discriminator=False,
-            manifold=False
-        )
-        
-        # Weights are expected in external/DeepFaceDrawing/checkpoints/
-        weights_path = os.path.join(dfd_dir, "checkpoints")
-        if os.path.exists(weights_path):
-            model.load(weights_path, map_location=device)
-        
-        model.to(device)
-        model.eval()
-        _dfd_model = model
+        try:
+            # Check if 'models' is already loaded and if it's the wrong one
+            if 'models' in sys.modules:
+                m = sys.modules['models']
+                if not hasattr(m, "DeepFaceDrawing"):
+                    # This is likely a system 'models' package (e.g. from torchvision or others)
+                    # We need to temporarily remove it to import our specific one
+                    del sys.modules['models']
+            
+            import models
+            import importlib
+            importlib.reload(models) # Ensure we get the one from dfd_dir
+            
+            if not hasattr(models, "DeepFaceDrawing"):
+                print("❌ DeepFaceDrawing class still not found in 'models' module.")
+                return None
+
+            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            model = models.DeepFaceDrawing(
+                CE=True, CE_encoder=True, CE_decoder=False,
+                FM=True, FM_decoder=True,
+                IS=True, IS_generator=True, IS_discriminator=False,
+                manifold=False
+            )
+            
+            weights_path = os.path.join(dfd_dir, "checkpoints")
+            if os.path.exists(weights_path):
+                model.load(weights_path, map_location=device)
+            
+            model.to(device)
+            model.eval()
+            _dfd_model = model
+            
+        except Exception as e:
+            print(f"❌ Failed to load DeepFaceDrawing model: {e}")
+            import traceback
+            traceback.print_exc()
+            return None
         
     return _dfd_model
 
