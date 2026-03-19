@@ -13,82 +13,76 @@ Phase I translates semantic descriptors into hyper-detailed pencil sketches via 
 
 ## 1. System Architecture Overview
 
-Skaitch runs on a robust enterprise-grade Linux server architecture optimally designed for memory-intensive diffusion workflows. 
+Skaitch is a unified PyTorch-based framework designed for high-fidelity portrait synthesis on memory-constrained hardware (e.g., NVIDIA T4).
 
 ### Infrastructure Requirements
-* **Compute:** NVIDIA T4 GPU (15GB VRAM), optimally supporting FP16 tensor precision.
-* **Storage:** Fast NVMe SSDs (`/opt/dlami/nvme/models/`) utilized for caching massive diffusion UNet structures efficiently.
-* **Environment:** Python 3.12 on Linux (Ubuntu recommended, given essential specific C-extensions needed for Jittor framework compilation).
+* **Compute:** NVIDIA T4 GPU (15GB VRAM), utilizing **Model CPU Offloading** via `accelerate`.
+* **Storage:** Fast NVMe SSDs (`/opt/dlami/nvme/models/`) for caching SDXL and ControlNet weights.
+* **Environment:** Python 3.12+ (Linux recommended). No JIT or C++ compilation required.
 
 ---
 
-## 2. Phase I: Generative Synthesis (SDXL + CodeFormer)
+## 2. Phase I: Sketch Synthesis (SDXL + CodeFormer)
 
-The first phase of the pipeline operates immediately upon the submission of semantic categorical parameters (e.g., *Jawline: Strong*, *Eyes: Almond*).
+Phase I translates semantic morphological descriptors into a high-detail pencil sketch.
 
-* **Model Loading:** The pipeline loads the `stabilityai/stable-diffusion-xl-base-1.0` model fully into VRAM (`device="cuda"`). Computations are strictly executed in `torch.float16` to circumvent OOM failures while employing SDXL native $1024 \times 1024$ latents.
-* **Stochastic Variation:** Utilizing PyTorch pseudo-random generation across specific manual seeds, Skaitch simultaneously spawns three parallel latent diffusion processes. This ensures investigators are offered **3 varied conceptualizations** of the provided descriptions.
-*   **Face Restoration (CodeFormer):** Immediately following decoding, raw SDXL image arrays are processed by a localized instance of `sczhou/CodeFormer`. Functioning as a transformative blind-face restorer, CodeFormer calculates High-Frequency structural components to sharpen eyes, nose, and mouth details while suppressing diffusion noise. All restorative weights are managed automatically on the NVMe storage.
-
----
-
-## 3. Phase II: Photorealistic Refinement (SDXL + ControlNet)
-
-The generation pipeline concludes with a high-fidelity refinement pass. Instead of a separate GAN, Skaitch leverages **SDXL ControlNet (Canny)** to translate the forensic sketch into a photorealistic portrait.
-
-*   **Morphological Guidance:** The ControlNet module uses Canny edge detection on the generated sketch, ensuring the photorealistic output follows the source geometry with clinical precision.
-*   **Hyper-Realistic Refinement:** A dedicated SDXL pass with a "Professional Studio Portrait" prompt synthesizes skin textures, lighting, and fine facial features at native 1024x1024 resolution.
-*   **Full Pipeline Restoration:** Both the initial sketches and the final photorealistic refinement undergo CodeFormer processing to guarantee topological accuracy and removal of GAN/diffusion artifacts.
+* **VRAM Optimization:** The pipeline uses `enable_model_cpu_offload()` to manage weight residency, enabling SDXL inference on a single T4. Computations are executed in `torch.float16` at $1024 \times 1024$ resolution.
+* **Stochastic Variation:** Skaitch generates **3 parallel variants** per run, providing investigators with alternative interpretations of the same description.
+* **Face Restoration:** Raw sketches are processed by **CodeFormer**, which sharpens facial geometry and restores structural integrity to translated descriptors.
 
 ---
 
-## 4. Technical Evolution & Legacy Analysis
+## 3. Phase II: Photorealistic Refinement (SDXL-ControlNet)
 
-Skaitch has transitioned through two major architectural phases for Photorealistic Translation.
+The refinement phase transforms the forensic sketch into a photographic-quality evidence portrait.
 
-### 4.1 Legend: The Jittor/DFD Era (Legacy)
-Originally, Phase II relied on the **DeepFaceDrawing (DFD)** GAN framework using the Jittor compiler.
-- **Advantages:** Specialized manifold learning for "fixing" human sketches.
-- **Disadvantages:** Significant compilation overhead on modern Linux (GCC 13+ conflicts), rigid 512x512 output, and complex weight management (DVC/Baidu Pan dependencies).
+* **Dynamic Feature Synchronization:** Feature selections (Hair Color, Eyes, Skin Tone, etc.) are propagated from Phase I to Phase II. This ensures the photorealistic result honors the specific traits selected by the investigator.
+* **Morphological Guidance:** Uses **SDXL-ControlNet (Canny)** to anchor the photographic synthesis to the sketch's geometry with clinical precision.
+* **High-Fidelity Output:** Produces a final 1024x1024 photorealistic translation with realistic skin textures and studio lighting.
+
+---
+
+## 4. Technical Evolution: From GANs to Diffusion
+
+Skaitch has been re-engineered to move past legacy limitations.
+
+### 4.1 Legacy: The DFD/Jittor Era
+Originally, Phase II used **DeepFaceDrawing (DFD)** on the Jittor framework.
+- **Issues:** Rigid 512x512 resolution, extreme dependency friction (JVC/GCC-13), and limited realism.
 
 ### 4.2 Modern: SDXL-ControlNet (Current)
-The current architecture utilizes a unified Diffusers/PyTorch stack.
-- **Advantages:** 
-    - **Stability:** Removes all JIT compilation and C++ compiler friction.
-    - **Resolution:** Native 1024x1024 output vs 512x512 legacy.
-    - **Maintenance:** Uses standard `.safetensors` weights via HuggingFace Hub.
-    - **Quality:** Higher dynamic range and superior skin texture synthesis.
-- **Disadvantages:** Higher VRAM requirement (~16GB+ recommended for peak throughput), though optimized for T4 via CPU offloading.
+The current architecture is built on a modern, stable Diffusers stack.
+- **Superior Quality:** Native 1024px resolution and cinematic skin synthesis.
+- **Stability:** Removed all custom JIT compilers, making the app portable across standard Linux/CUDA environments.
+- **Precision:** Dynamic prompt synchronization ensures the "Photographic" pass matches the "Sketch" pass exactly.
 
 ---
 
-## 5. Setup & Deployment Guidelines
+## 5. Deployment & Setup
 
-### I. Repository Clone & Requirements
+### I. Installation
 ```bash
 git clone https://github.com/ShishirModi/Skaitch.git
 cd Skaitch
-# Install modern dependencies (Torch 2.3+, Diffusers, Transformers)
 pip install -r requirements.txt
 ```
 
-### II. Automated Weights Setup
-Skaitch handles the entire setup of both Phase I and Phase II automatically. Simply run the application:
+### II. Automated Weights Initialization
+Skaitch automatically manages all weights on the NVMe drive. Simply run:
 ```bash
 streamlit run app.py
 ```
 
-**What happens during initialization:**
-1.  **SDXL Base:** Downloaded to `/opt/dlami/nvme/models/sdxl/`.
-2.  **ControlNet Canny:** Downloaded to `/opt/dlami/nvme/models/controlnet-canny-sdxl/`.
-3.  **CodeFormer:** Fetched from GitHub Releases to `/opt/dlami/nvme/models/codeformer/`.
-4.  **No Manual Intervention:** All weights are sourced automatically from validated mirrors.
+**Automated Setup Includes:**
+- **SDXL Base:** `/opt/dlami/nvme/models/sdxl/`
+- **ControlNet Canny:** `/opt/dlami/nvme/models/controlnet-canny-sdxl/`
+- **CodeFormer:** `/opt/dlami/nvme/models/codeformer/` (Weights) and `external/CodeFormer/` (Repo)
 
 ---
 
-## 6. User Interface (Streamlit)
+## 6. User Interface
 
-Skaitch abstracts complex PyTorch interactions beneath an intuitive Streamlit browser application. 
-- **Telemetry Overview:** The sidebar reports real-time CUDA properties (Model Name, Available VRAM).
-- **Structured Forensic Interface:** Investigators select from a comprehensive library of morphological features (Face shape, Eyes, Jawline, etc.) to build the composite.
-- **Auto-Persistent Save Architecture:** Generated variants and resulting Refinement translations are locally cached under `data/`.
+- **Forensic Specialty UI:** A focused, structured workstation. The legacy free-text "Free Form" mode has been removed to minimize operator error.
+- **Telemetry Overview:** Real-time monitoring of CUDA device and VRAM status in the sidebar.
+- **Auto-Persistent Storage:** All sketches and refinements are automatically saved to the local `data/` directory with unique timestamps.
+

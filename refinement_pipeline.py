@@ -45,7 +45,7 @@ def load_refinement_pipeline():
         
     return _refinement_pipe
 
-def run_sdxl_refinement(sketch_pil: Image.Image, features: dict) -> Image.Image:
+def run_sdxl_refinement(sketch_pil: Image.Image, features: dict, extra_details: str = "") -> Image.Image:
     """
     Takes an SDXL-generated sketch or a hand-drawn sketch and 
     refines it into a photorealistic face using ControlNet.
@@ -63,22 +63,9 @@ def run_sdxl_refinement(sketch_pil: Image.Image, features: dict) -> Image.Image:
     # cv2.Canny already returns this format (edges are 255, background 0)
     control_image = Image.fromarray(edges)
     
-    # 2. Build the "Refinement" prompt
-    gender = features.get("Gender", "person")
-    age = features.get("Age range", "adult")
-    skin = features.get("Skin tone", "natural")
-    
-    # Quality-focused photorealistic prompt
-    refinement_prompt = (
-        f"Extreme close-up professional studio portrait of a {age} {gender.lower()}, "
-        f"{skin.lower()} skin tone, highly detailed skin texture, pores, "
-        "hyper-realistic, 8k resolution, cinematic lighting, masterpiece, sharp focus"
-    )
-    
-    negative_prompt = (
-        "scribble, sketch, drawing, painting, cartoon, anime, 3d, monochromatic, "
-        "blurry, low quality, distorted face, watermark, text"
-    )
+    # 2. Build the "Refinement" prompt using the centralized prompt builder
+    from prompt_builder import build_sdxl_refinement_prompt
+    refinement_prompt, negative_prompt = build_sdxl_refinement_prompt(features, extra_details)
 
     # 3. Run Inference
     pipe = load_refinement_pipeline()

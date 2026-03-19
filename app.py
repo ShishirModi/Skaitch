@@ -671,7 +671,7 @@ if generate:
                 torch.cuda.empty_cache()
             
             try:
-                refinement_image = refinement_pipeline.run_sdxl_refinement(main_image, selected_features)
+                refinement_image = refinement_pipeline.run_sdxl_refinement(main_image, selected_features, extra_details)
                 refine_success = True
             except Exception as e:
                 import html

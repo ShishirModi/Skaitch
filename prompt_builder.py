@@ -189,3 +189,77 @@ def build_sdxl_forensic_prompt(
     """Wrapper that calls build_forensic_prompt and appends SDXL boosters."""
     prompt, neg = build_forensic_prompt(features, style, extra_details)
     return prompt + ", best quality, masterpiece, highly detailed face", neg
+
+def build_refinement_prompt(
+    features: dict[str, str],
+    extra_details: str = "",
+) -> tuple[str, str]:
+    """Assemble a high-fidelity photorealistic prompt for Phase II refinement.
+    
+    Reuses the same feature logic as build_forensic_prompt but swaps
+    sketch-specific tokens for photographic ones.
+    """
+    gender = features.get("Gender", "person")
+    age = features.get("Age range", "adult")
+
+    parts = [
+        f"Extreme close-up professional studio portrait of a {age} {gender.lower()}",
+    ]
+
+    # Re-use most of the descriptive parts
+    for cat in ["Face shape", "Jawline", "Eyes", "Eyebrows", "Nose", "Mouth / Lips", "Skin tone"]:
+        val = features.get(cat)
+        if val:
+            if cat == "Mouth / Lips":
+                parts.append(f"{val.lower()} lips")
+            else:
+                parts.append(f"{val.lower()} {cat.lower()}")
+
+    # Hair
+    hair_style = features.get("Hair style")
+    hair_color = features.get("Hair color")
+    if hair_style and hair_style != "Bald":
+        hair_desc = f"{hair_color.lower()} {hair_style.lower()} hair" if hair_color else f"{hair_style.lower()} hair"
+        parts.append(hair_desc)
+    elif hair_style == "Bald":
+        parts.append("bald head")
+
+    # Facial hair
+    facial_hair = features.get("Facial hair")
+    if facial_hair and facial_hair != "None":
+        parts.append(facial_hair.lower())
+
+    # Distinguishing marks
+    marks = features.get("Distinguishing marks")
+    if marks and marks != "None":
+        parts.append(marks.lower())
+
+    # Quality tokens for photorealism
+    photo_tokens = (
+        "hyper-realistic face, highly detailed skin texture, pores, 8k resolution, "
+        "cinematic lighting, masterpiece, sharp focus, professional photography, "
+        "detailed eyes, detailed hair texture"
+    )
+
+    prompt = ", ".join(parts) + ", " + photo_tokens
+
+    if extra_details.strip():
+        # Strip potential "pencil" or "sketch" references from extra_details if present
+        details = extra_details.strip().lower()
+        if "sketch" not in details and "pencil" not in details:
+            prompt += ", " + extra_details.strip()
+
+    negative_prompt = (
+        "scribble, sketch, drawing, painting, pencil, charcoal, cartoon, anime, 3d, monochromatic, "
+        "blurry, low quality, distorted face, watermark, text, signature"
+    )
+
+    return prompt, negative_prompt
+
+def build_sdxl_refinement_prompt(
+    features: dict[str, str],
+    extra_details: str = "",
+) -> tuple[str, str]:
+    """Wrapper for SDXL refinement pass."""
+    prompt, neg = build_refinement_prompt(features, extra_details)
+    return prompt + ", best quality, highly detailed face", neg
