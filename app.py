@@ -622,7 +622,7 @@ if generate:
     
     with st.spinner("🖌️ Generating with SDXL on T4 GPU ..."):
         for current_seed in seeds_to_run:
-            generator = torch.Generator("cuda" if torch.cuda.is_available() else "cpu").manual_seed(current_seed)
+            generator = torch.Generator(device="cpu").manual_seed(current_seed)
             result = pipe(
                 prompt,
                 negative_prompt=negative_prompt if negative_prompt.strip() else None,
