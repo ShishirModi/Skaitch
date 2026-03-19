@@ -27,8 +27,8 @@ import face_restoration
 
 # ─── Page config ───────────────────────────────────────────────────────────────
 st.set_page_config(
-    page_title="Skaitch – Stable Diffusion",
-    page_icon="🎨",
+    page_title="Skaitch – Forensic Composite Suite",
+    page_icon="🔍",
     layout="wide",
 )
 
@@ -338,8 +338,8 @@ def run_codeformer(img: Image.Image) -> Image.Image:
 st.markdown(
     """
     <div class="main-header">
-        <h1>🎨 Skaitch — Stable Diffusion</h1>
-        <p>Generate images from text prompts using a local Stable Diffusion model</p>
+        <h1>🔍 Skaitch — Forensic Composite Suite</h1>
+        <p>Professional generative facial sketching from structured categorical descriptors</p>
     </div>
     """,
     unsafe_allow_html=True,
@@ -410,6 +410,8 @@ with st.sidebar:
                 st.session_state.admin_mode = False
                 st.rerun()
 
+    forensic_mode = True
+    
     # ── Section: Facial Features ───────────────────────────────────────
     st.markdown(
         '<div class="sidebar-section">'
@@ -651,44 +653,36 @@ if generate:
     )
 
     # ── Pipeline specific displays ──────────────────────────────────────
-    if forensic_mode:
-        st.markdown("#### Stable Diffusion Sketches (SDXL + CodeFormer)")
-        cols = st.columns(3, gap="medium")
-        for idx, (img, col) in enumerate(zip(processed_images, cols)):
-            with col:
-                st.image(img, use_container_width=True)
-                st.caption(f"*Variation {idx+1}*")
-        
-        st.divider()
-        col_img_refine, col_meta = st.columns([3, 2], gap="large")
+    st.markdown("#### Stable Diffusion Sketches (SDXL + CodeFormer)")
+    cols = st.columns(3, gap="medium")
+    for idx, (img, col) in enumerate(zip(processed_images, cols)):
+        with col:
+            st.image(img, use_container_width=True)
+            st.caption(f"*Variation {idx+1}*")
+    
+    st.divider()
+    col_img_refine, col_meta = st.columns([3, 2], gap="large")
 
-        with col_img_refine:
-            st.markdown("#### Photorealistic Refinement (Variation 1)")
-            with st.spinner("🤖 SDXL-ControlNet Refinement — Generating Photorealistic Output …"):
-                # Clear VRAM before Phase II to ensure maximum headroom
-                if torch.cuda.is_available():
-                    torch.cuda.empty_cache()
-                
-                try:
-                    refinement_image = refinement_pipeline.run_sdxl_refinement(main_image, selected_features)
-                    refine_success = True
-                except Exception as e:
-                    import html
-                    refine_error = html.escape(str(e))
-                    refine_success = False
+    with col_img_refine:
+        st.markdown("#### Photorealistic Refinement (Variation 1)")
+        with st.spinner("🤖 SDXL-ControlNet Refinement — Generating Photorealistic Output …"):
+            # Clear VRAM before Phase II to ensure maximum headroom
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+            
+            try:
+                refinement_image = refinement_pipeline.run_sdxl_refinement(main_image, selected_features)
+                refine_success = True
+            except Exception as e:
+                import html
+                refine_error = html.escape(str(e))
+                refine_success = False
 
-            if refine_success:
-                st.image(refinement_image, use_container_width=True)
-                st.caption(f"*SDXL-ControlNet Refinement*")
-            else:
-                st.error(f"Refinement failed: {refine_error}\n\nEnsure that the ControlNet weights are correctly downloaded to the NVMe storage.")
-
-    else:
-        # Standard layout for free-text mode
-        col_img, col_meta = st.columns([3, 1], gap="large")
-        with col_img:
-            st.image(main_image, use_container_width=True)
-            st.caption(f'*"{prompt}"*')
+        if refine_success:
+            st.image(refinement_image, use_container_width=True)
+            st.caption(f"*SDXL-ControlNet Refinement*")
+        else:
+            st.error(f"Refinement failed: {refine_error}\n\nEnsure that the ControlNet weights are correctly downloaded to the NVMe storage.")
 
     # ── Auto-Save to data/ ──────────────────────────────────────────────
     import datetime
@@ -719,13 +713,12 @@ if generate:
                 "</div>"
             )
         mode_row = ""
-        if forensic_mode:
-            mode_row = (
-                '<div class="param-row">'
-                '<span class="key">Mode</span>'
-                '<span class="val">Forensic (3x)</span>'
-                "</div>"
-            )
+        mode_row = (
+            '<div class="param-row">'
+            '<span class="key">Mode</span>'
+            '<span class="val">Forensic (3x)</span>'
+            "</div>"
+        )
         st.markdown(
             '<div class="param-card">'
             "<h4>Parameters</h4>"

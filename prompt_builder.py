@@ -169,7 +169,8 @@ def build_forensic_prompt(
     quality_tokens = (
         "front-facing portrait, centered composition, white background, "
         "ultra-high detail, sharp facial lines, professional forensic composite, "
-        "photorealistic pencil rendering, 8k resolution, studio lighting"
+        "photorealistic pencil rendering, 8k resolution, studio lighting, "
+        "criminal investigation, legal evidence accuracy"
     )
 
     prompt = ", ".join(parts) + ", " + quality_tokens
