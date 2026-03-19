@@ -410,178 +410,144 @@ with st.sidebar:
                 st.session_state.admin_mode = False
                 st.rerun()
 
-    # ── Mode toggle ────────────────────────────────────────────────────────
-    forensic_mode = st.toggle("🔍 Forensic Sketch Mode", value=False)
+    # ── Section: Facial Features ───────────────────────────────────────
+    st.markdown(
+        '<div class="sidebar-section">'
+        '<span class="icon">👤</span>'
+        '<span class="label">Facial Features</span>'
+        "</div>",
+        unsafe_allow_html=True,
+    )
 
-    if forensic_mode:
-        # ── Section: Facial Features ───────────────────────────────────────
-        st.markdown(
-            '<div class="sidebar-section">'
-            '<span class="icon">👤</span>'
-            '<span class="label">Facial Features</span>'
-            "</div>",
-            unsafe_allow_html=True,
+    selected_features: dict[str, str] = {}
+
+    # Layout: Gender + Age side-by-side
+    col_g, col_a = st.columns(2)
+    with col_g:
+        selected_features["Gender"] = st.selectbox(
+            "Gender", FACIAL_FEATURES["Gender"]
+        )
+    with col_a:
+        selected_features["Age range"] = st.selectbox(
+            "Age range", FACIAL_FEATURES["Age range"], index=1
         )
 
-        selected_features: dict[str, str] = {}
+    # Face structure row
+    col_fs, col_jl = st.columns(2)
+    with col_fs:
+        feature_val = st.selectbox("Face shape", FACIAL_FEATURES["Face shape"])
+        selected_features["Face shape"] = feature_val
+        st.markdown(get_svg_html(VISUAL_AIDS["Face shape"][feature_val]), unsafe_allow_html=True)
+        
+    with col_jl:
+        feature_val = st.selectbox("Jawline", FACIAL_FEATURES["Jawline"])
+        selected_features["Jawline"] = feature_val
+        st.markdown(get_svg_html(VISUAL_AIDS["Jawline"][feature_val]), unsafe_allow_html=True)
 
-        # Layout: Gender + Age side-by-side
-        col_g, col_a = st.columns(2)
-        with col_g:
-            selected_features["Gender"] = st.selectbox(
-                "Gender", FACIAL_FEATURES["Gender"]
-            )
-        with col_a:
-            selected_features["Age range"] = st.selectbox(
-                "Age range", FACIAL_FEATURES["Age range"], index=1
-            )
-
-        # Face structure row
-        col_fs, col_jl = st.columns(2)
-        with col_fs:
-            feature_val = st.selectbox("Face shape", FACIAL_FEATURES["Face shape"])
-            selected_features["Face shape"] = feature_val
-            st.markdown(get_svg_html(VISUAL_AIDS["Face shape"][feature_val]), unsafe_allow_html=True)
-            
-        with col_jl:
-            feature_val = st.selectbox("Jawline", FACIAL_FEATURES["Jawline"])
-            selected_features["Jawline"] = feature_val
-            st.markdown(get_svg_html(VISUAL_AIDS["Jawline"][feature_val]), unsafe_allow_html=True)
-
-        # Eyes + Brows row
-        col_e, col_eb = st.columns(2)
-        with col_e:
-            feature_val = st.selectbox("Eyes", FACIAL_FEATURES["Eyes"])
-            selected_features["Eyes"] = feature_val
-            st.markdown(get_svg_html(VISUAL_AIDS["Eyes"][feature_val]), unsafe_allow_html=True)
-            
-        with col_eb:
-            selected_features["Eyebrows"] = st.selectbox(
-                "Eyebrows", FACIAL_FEATURES["Eyebrows"]
-            )
-
-        # Nose + Mouth row
-        col_n, col_m = st.columns(2)
-        with col_n:
-            feature_val = st.selectbox("Nose", FACIAL_FEATURES["Nose"])
-            selected_features["Nose"] = feature_val
-            st.markdown(get_svg_html(VISUAL_AIDS["Nose"][feature_val]), unsafe_allow_html=True)
-            
-        with col_m:
-            selected_features["Mouth / Lips"] = st.selectbox(
-                "Mouth / Lips", FACIAL_FEATURES["Mouth / Lips"]
-            )
-
-        # Skin tone
-        selected_features["Skin tone"] = st.selectbox(
-            "Skin tone", FACIAL_FEATURES["Skin tone"], index=2
+    # Eyes + Brows row
+    col_e, col_eb = st.columns(2)
+    with col_e:
+        feature_val = st.selectbox("Eyes", FACIAL_FEATURES["Eyes"])
+        selected_features["Eyes"] = feature_val
+        st.markdown(get_svg_html(VISUAL_AIDS["Eyes"][feature_val]), unsafe_allow_html=True)
+        
+    with col_eb:
+        selected_features["Eyebrows"] = st.selectbox(
+            "Eyebrows", FACIAL_FEATURES["Eyebrows"]
         )
 
-        # ── Section: Hair ──────────────────────────────────────────────────
-        st.markdown(
-            '<div class="sidebar-section">'
-            '<span class="icon">💇</span>'
-            '<span class="label">Hair</span>'
-            "</div>",
-            unsafe_allow_html=True,
+    # Nose + Mouth row
+    col_n, col_m = st.columns(2)
+    with col_n:
+        feature_val = st.selectbox("Nose", FACIAL_FEATURES["Nose"])
+        selected_features["Nose"] = feature_val
+        st.markdown(get_svg_html(VISUAL_AIDS["Nose"][feature_val]), unsafe_allow_html=True)
+        
+    with col_m:
+        selected_features["Mouth / Lips"] = st.selectbox(
+            "Mouth / Lips", FACIAL_FEATURES["Mouth / Lips"]
         )
 
-        col_hs, col_hc = st.columns(2)
-        with col_hs:
-            selected_features["Hair style"] = st.selectbox(
-                "Hair style", FACIAL_FEATURES["Hair style"]
-            )
-        with col_hc:
-            selected_features["Hair color"] = st.selectbox(
-                "Hair color", FACIAL_FEATURES["Hair color"]
-            )
+    # Skin tone
+    selected_features["Skin tone"] = st.selectbox(
+        "Skin tone", FACIAL_FEATURES["Skin tone"], index=2
+    )
 
-        selected_features["Facial hair"] = st.selectbox(
-            "Facial hair", FACIAL_FEATURES["Facial hair"]
+    # ── Section: Hair ──────────────────────────────────────────────────
+    st.markdown(
+        '<div class="sidebar-section">'
+        '<span class="icon">💇</span>'
+        '<span class="label">Hair</span>'
+        "</div>",
+        unsafe_allow_html=True,
+    )
+
+    col_hs, col_hc = st.columns(2)
+    with col_hs:
+        selected_features["Hair style"] = st.selectbox(
+            "Hair style", FACIAL_FEATURES["Hair style"]
+        )
+    with col_hc:
+        selected_features["Hair color"] = st.selectbox(
+            "Hair color", FACIAL_FEATURES["Hair color"]
         )
 
-        # ── Section: Distinguishing Marks ──────────────────────────────────
-        st.markdown(
-            '<div class="sidebar-section">'
-            '<span class="icon">🔖</span>'
-            '<span class="label">Distinguishing Marks</span>'
-            "</div>",
-            unsafe_allow_html=True,
-        )
+    selected_features["Facial hair"] = st.selectbox(
+        "Facial hair", FACIAL_FEATURES["Facial hair"]
+    )
 
-        selected_features["Distinguishing marks"] = st.selectbox(
-            "Distinguishing marks",
-            FACIAL_FEATURES["Distinguishing marks"],
-            label_visibility="collapsed",
-        )
+    # ── Section: Distinguishing Marks ──────────────────────────────────
+    st.markdown(
+        '<div class="sidebar-section">'
+        '<span class="icon">🔖</span>'
+        '<span class="label">Distinguishing Marks</span>'
+        "</div>",
+        unsafe_allow_html=True,
+    )
 
-        # ── Sketch style ──────────────────────────────────────────────────
-        st.markdown(
-            '<div class="sidebar-section">'
-            '<span class="icon">🖊️</span>'
-            '<span class="label">Sketch Style</span>'
-            "</div>",
-            unsafe_allow_html=True,
-        )
+    selected_features["Distinguishing marks"] = st.selectbox(
+        "Distinguishing marks",
+        FACIAL_FEATURES["Distinguishing marks"],
+        label_visibility="collapsed",
+    )
 
-        sketch_style = st.selectbox(
-            "Sketch style", SKETCH_STYLES, label_visibility="collapsed"
-        )
+    # ── Sketch style ──────────────────────────────────────────────────
+    st.markdown(
+        '<div class="sidebar-section">'
+        '<span class="icon">🖊️</span>'
+        '<span class="label">Sketch Style</span>'
+        "</div>",
+        unsafe_allow_html=True,
+    )
 
-        extra_details = st.text_input(
-            "Additional details",
-            placeholder="e.g. wearing glasses, prominent ears …",
-            help="Free-text appended to the generated prompt.",
-        )
+    sketch_style = st.selectbox(
+        "Sketch style", SKETCH_STYLES, label_visibility="collapsed"
+    )
 
-        # Build prompt
-        prompt, negative_prompt = build_sdxl_forensic_prompt(
-            selected_features, sketch_style, extra_details
-        )
+    extra_details = st.text_input(
+        "Additional details",
+        placeholder="e.g. wearing glasses, prominent ears …",
+        help="Free-text appended to the generated prompt.",
+    )
 
-        # Show prompt preview
-        st.markdown(
-            '<div class="prompt-preview-label">Generated prompt</div>',
-            unsafe_allow_html=True,
-        )
-        st.markdown(
-            f'<div class="prompt-preview">{prompt}</div>',
-            unsafe_allow_html=True,
-        )
+    # Build prompt
+    prompt, negative_prompt = build_sdxl_forensic_prompt(
+        selected_features, sketch_style, extra_details
+    )
 
-        # Use forensic defaults
-        default_steps = 40
-        default_cfg = 12.0
+    # Show prompt preview
+    st.markdown(
+        '<div class="prompt-preview-label">Generated prompt</div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown(
+        f'<div class="prompt-preview">{prompt}</div>',
+        unsafe_allow_html=True,
+    )
 
-    else:
-        # ── Section: Prompt (free-text mode) ───────────────────────────────
-        st.markdown(
-            '<div class="sidebar-section">'
-            '<span class="icon">✏️</span>'
-            '<span class="label">Prompt</span>'
-            "</div>",
-            unsafe_allow_html=True,
-        )
-
-        prompt = st.text_area(
-            "Prompt",
-            value="close up shot of a pink lotus flower in the center, photorealistic, high detail",
-            height=110,
-            help="Describe the image you want to generate.",
-            label_visibility="collapsed",
-        )
-
-        negative_prompt = st.text_area(
-            "Negative prompt",
-            value="",
-            height=70,
-            placeholder="(optional) blurry, low quality, distorted …",
-            help="Describe what you do NOT want in the image.",
-            label_visibility="collapsed",
-        )
-
-        default_steps = 25
-        default_cfg = 7.5
+    # Use forensic defaults
+    default_steps = 40
+    default_cfg = 12.0
 
     # ── Section: Parameters ────────────────────────────────────────────────
     st.markdown(
@@ -646,14 +612,9 @@ if generate:
 
     # Determine seeds and variations
     import random
-    if forensic_mode:
-        num_variations = 3
-        base_seed = int(seed) if seed != 0 else random.randint(1, 2**32 - 10)
-        seeds_to_run = [base_seed, base_seed + 1, base_seed + 2]
-    else:
-        num_variations = 1
-        base_seed = int(seed) if seed != 0 else random.randint(1, 2**32 - 10)
-        seeds_to_run = [base_seed]
+    num_variations = 3
+    base_seed = int(seed) if seed != 0 else random.randint(1, 2**32 - 10)
+    seeds_to_run = [base_seed, base_seed + 1, base_seed + 2]
 
     generated_images = []
     
@@ -743,7 +704,7 @@ if generate:
             img.save(sketch_path)
         
         # Save the Refinement output if applicable
-        if forensic_mode and refine_success:
+        if refine_success:
             refine_save_path = os.path.join("data", f"refinement_{timestamp}.png")
             refinement_image.save(refine_save_path)
 
@@ -800,7 +761,7 @@ if generate:
                 key=f"dl_sketch_{idx}"
             )
         
-        if forensic_mode and refine_success:
+        if refine_success:
             st.markdown("<div style='margin-top:0.4rem'></div>", unsafe_allow_html=True)
             buf2 = io.BytesIO()
             refinement_image.save(buf2, format="PNG")

@@ -1,8 +1,8 @@
 # Skaitch: A Two-Stage Generative Framework for High-Fidelity Forensic Composite Portraits
 
-**Skaitch** is an advanced, GPU-accelerated application engineered to produce professional-grade forensic facial sketches from structured categorical inputs. Operating conceptually similarly to traditional police composite toolkits, Skaitch leverages modern Deep Generative Neural Networks in a dual-phase architecture.
+**Skaitch** is a specialized, GPU-accelerated forensic application engineered to produce professional-grade composite portraits from structured categorical inputs. By bridging expert morphological descriptors with a dual-phase generative pipeline, Skaitch transforms verbal descriptions into high-fidelity visual evidence.
 
-Phase I translates semantic morphological descriptors into hyper-detailed pencil sketches via **Stable Diffusion XL (SDXL)**, further refined by **CodeFormer** face restoration geometry. Phase II maps the synthesized sketch into an **SDXL + ControlNet** refinement pass to achieve a photorealistic "fact-check" portrait translation through clinical edge-guidance.
+Phase I translates semantic descriptors into hyper-detailed pencil sketches via **Stable Diffusion XL (SDXL)**, immediately refined by **CodeFormer** face restoration. Phase II leverages the synthesized sketch as a geometric anchor for an **SDXL-ControlNet** refinement pass, achieving a photorealistic "photographic" translation.
 
 ![Skaitch Protocol](https://img.shields.io/badge/Streamlit-FF4B4B?logo=streamlit&logoColor=white)
 ![Python](https://img.shields.io/badge/Python-3.12+-3776AB?logo=python&logoColor=white)
@@ -90,5 +90,5 @@ streamlit run app.py
 
 Skaitch abstracts complex PyTorch interactions beneath an intuitive Streamlit browser application. 
 - **Telemetry Overview:** The sidebar reports real-time CUDA properties (Model Name, Available VRAM).
-- **Control Interface:** Options intelligently toggle based on "Free-Text" vs "Forensic Sketch Mode".
+- **Structured Forensic Interface:** Investigators select from a comprehensive library of morphological features (Face shape, Eyes, Jawline, etc.) to build the composite.
 - **Auto-Persistent Save Architecture:** Generated variants and resulting Refinement translations are locally cached under `data/`.
