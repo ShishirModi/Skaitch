@@ -28,7 +28,7 @@ The first phase of the pipeline operates immediately upon the submission of sema
 
 * **Model Loading:** The pipeline loads the `stabilityai/stable-diffusion-xl-base-1.0` model fully into VRAM (`device="cuda"`). Computations are strictly executed in `torch.float16` to circumvent OOM failures while employing SDXL native $1024 \times 1024$ latents.
 * **Stochastic Variation:** Utilizing PyTorch pseudo-random generation across specific manual seeds, Skaitch simultaneously spawns three parallel latent diffusion processes. This ensures investigators are offered **3 varied conceptualizations** of the provided descriptions.
-* **Face Restoration (CodeFormer):** Immediately following decoding via the VAE, raw SDXL image arrays are bridged to a localized instance of `sczhou/CodeFormer`. Functioning as a transformative blind-face restorer, CodeFormer recalculates the High-Frequency structural components of the facial topography, severely decreasing diffusion artifacts naturally propagating in sketch mediums.
+*   **Face Restoration (CodeFormer):** Immediately following decoding, raw SDXL image arrays are processed by a localized instance of `sczhou/CodeFormer`. Functioning as a transformative blind-face restorer, CodeFormer calculates High-Frequency structural components to sharpen eyes, nose, and mouth details while suppressing diffusion noise. All restorative weights are managed automatically on the NVMe storage.
 
 ---
 
@@ -38,7 +38,7 @@ The generation pipeline concludes with a high-fidelity refinement pass. Instead 
 
 *   **Morphological Guidance:** The ControlNet module uses Canny edge detection on the generated sketch, ensuring the photorealistic output follows the source geometry with clinical precision.
 *   **Hyper-Realistic Refinement:** A dedicated SDXL pass with a "Professional Studio Portrait" prompt synthesizes skin textures, lighting, and fine facial features at native 1024x1024 resolution.
-*   **CodeFormer Integration:** All results undergo a final face restoration pass to ensure eye/mouth symmetry and remove potential diffusion artifacts.
+*   **Full Pipeline Restoration:** Both the initial sketches and the final photorealistic refinement undergo CodeFormer processing to guarantee topological accuracy and removal of GAN/diffusion artifacts.
 
 ---
 

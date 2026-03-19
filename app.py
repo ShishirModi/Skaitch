@@ -23,6 +23,7 @@ from prompt_builder import (
 
 from visual_aids import VISUAL_AIDS, get_svg_html
 import refinement_pipeline
+import face_restoration
 
 # ─── Page config ───────────────────────────────────────────────────────────────
 st.set_page_config(
@@ -317,19 +318,19 @@ def load_pipeline():
         use_safetensors=True
     )
     if torch.cuda.is_available():
-        pipe = pipe.to("cuda")
+        # Use model-level CPU offloading to save VRAM on T4
+        pipe.enable_model_cpu_offload()
     return pipe
 
 def run_codeformer(img: Image.Image) -> Image.Image:
-    """Graceful CodeFormer wrapper. Silently returns original if it fails."""
+    """True CodeFormer face restoration. Returns original on failure."""
     try:
-        import sys
-        # Standard fallback for CodeFormer inference
-        # If it fails (e.g. basicsr not configured), it silently skips
         if torch.cuda.is_available():
-            img = img  # Placeholder for CodeFormer path
+            # Apply real restoration
+            return face_restoration.run_codeformer(img, fidelity=0.5)
         return img
-    except Exception:
+    except Exception as e:
+        print(f"⚠️ CodeFormer recovery failed: {e}")
         return img
 
 
@@ -703,6 +704,10 @@ if generate:
         with col_img_refine:
             st.markdown("#### Photorealistic Refinement (Variation 1)")
             with st.spinner("🤖 SDXL-ControlNet Refinement — Generating Photorealistic Output …"):
+                # Clear VRAM before Phase II to ensure maximum headroom
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
+                
                 try:
                     refinement_image = refinement_pipeline.run_sdxl_refinement(main_image, selected_features)
                     refine_success = True

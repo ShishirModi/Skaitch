@@ -1,5 +1,5 @@
 numpy
-opencv-python
+opencv-python-headless
 torch>=2.3.0
 torchvision
 torchaudio

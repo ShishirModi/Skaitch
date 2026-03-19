@@ -7,9 +7,11 @@ load_dotenv()
 
 SDXL_MODEL_ID = "stabilityai/stable-diffusion-xl-base-1.0"
 CODEFORMER_MODEL_URL = "https://github.com/sczhou/CodeFormer/releases/download/v0.1.0/codeformer.pth"
+CODEFORMER_REPO_URL = "https://github.com/sczhou/CodeFormer.git"
 
 SDXL_OUTPUT_DIR = "/opt/dlami/nvme/models/sdxl"
 CODEFORMER_OUTPUT_DIR = "/opt/dlami/nvme/models/codeformer"
+CODEFORMER_DIR = os.path.join(os.path.dirname(__file__), "external", "CodeFormer")
 CONTROLNET_MODEL_ID = "diffusers/controlnet-canny-sdxl-1.0"
 CONTROLNET_OUTPUT_DIR = "/opt/dlami/nvme/models/controlnet-canny-sdxl"
 
@@ -47,10 +49,24 @@ def check_and_download_models():
     # Check CodeFormer (GitHub Release)
     codeformer_path = os.path.join(CODEFORMER_OUTPUT_DIR, "codeformer.pth")
     if not os.path.exists(codeformer_path):
-        print(f"Downloading CodeFormer to {codeformer_path}...")
+        print(f"Downloading CodeFormer weights to {codeformer_path}...")
         urllib.request.urlretrieve(CODEFORMER_MODEL_URL, codeformer_path)
     else:
-        print(f"✅ CodeFormer model already exists at {CODEFORMER_OUTPUT_DIR}.")
+        print(f"✅ CodeFormer weights already exist.")
+
+    # Check CodeFormer Repository
+    if not os.path.exists(CODEFORMER_DIR):
+        print(f"Cloning CodeFormer repository from {CODEFORMER_REPO_URL}...")
+        os.makedirs(os.path.dirname(CODEFORMER_DIR), exist_ok=True)
+        subprocess.run(["git", "clone", CODEFORMER_REPO_URL, CODEFORMER_DIR], check=True)
+        
+        # Move weights to the repo's expected location
+        repo_weights_dir = os.path.join(CODEFORMER_DIR, "weights", "CodeFormer")
+        os.makedirs(repo_weights_dir, exist_ok=True)
+        subprocess.run(["cp", codeformer_path, os.path.join(repo_weights_dir, "codeformer.pth")], check=True)
+        print(f"✅ CodeFormer repository and weights installed successfully.")
+    else:
+        print(f"✅ CodeFormer repository already exists.")
 
     # Check ControlNet refinement models
     check_and_download_controlnet()

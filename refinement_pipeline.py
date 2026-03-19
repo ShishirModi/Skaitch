@@ -35,10 +35,11 @@ def load_refinement_pipeline():
             use_safetensors=True
         )
         
-        pipe.to(device)
-        # Enable memory optimizations
+        # Enable memory offloading instead of a full .to(device)
         if device == "cuda":
             pipe.enable_model_cpu_offload()
+        else:
+            pipe.to(device) # Fallback for CPU-only environments
             
         _refinement_pipe = pipe
         
