@@ -5,6 +5,7 @@ venv/
 
 # Ignore system files
 .DS_Store
+__pycache__/
 
 # Ignore large model weights
 *.safetensors
