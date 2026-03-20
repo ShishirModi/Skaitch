@@ -77,9 +77,9 @@ def run_sdxl_refinement(sketch_pil: Image.Image, features: dict, extra_details: 
         prompt=refinement_prompt,
         image=control_image,
         negative_prompt=negative_prompt,
-        controlnet_conditioning_scale=0.85, # Strong adherence to sketch lines
+        controlnet_conditioning_scale=0.70, # Balanced adherence to allow prompt-driven colors
         num_inference_steps=30,
-        guidance_scale=8.0,
+        guidance_scale=9.0,
     ).images[0]
 
     return result

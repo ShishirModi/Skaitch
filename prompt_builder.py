@@ -42,8 +42,29 @@ FACIAL_FEATURES = {
         "None", "Stubble", "Full beard", "Goatee", "Mustache",
         "Van Dyke", "Soul patch",
     ],
+    "Ethnicity": [
+        "Caucasian / White", 
+        "African / Black", 
+        "East Asian", 
+        "South Asian", 
+        "Southeast Asian", 
+        "Middle Eastern / North African", 
+        "Hispanic / Latino", 
+        "Native American / Indigenous",
+        "Pacific Islander",
+        "Mixed / Multiracial"
+    ],
     "Skin tone": [
         "Fair", "Light", "Medium", "Olive", "Tan", "Brown", "Dark",
+    ],
+    "Eye color": [
+        "Brown", "Blue", "Green", "Hazel", "Amber", "Grey", "Black"
+    ],
+    "Spectacles": [
+        "None", "Rectangular", "Round", "Oval", "Square", "Aviator", "Cat-eye"
+    ],
+    "Spectacles Tint": [
+        "None", "Transparent", "Lightly Tinted", "Dark Sunglasses"
     ],
     "Distinguishing marks": [
         "None",
@@ -122,15 +143,16 @@ def build_forensic_prompt(
     if jawline:
         parts.append(f"{jawline.lower()} jawline")
 
+    # Skin and Ethnicity
+    ethnicity = features.get("Ethnicity")
+    skin = features.get("Skin tone")
+    if ethnicity:
+        parts.append(f"{ethnicity.lower()} ethnicity")
+    if skin:
+        parts.append(f"{skin.lower()} skin tone")
+
     # Eyes & brows
     eyes = features.get("Eyes")
-    if eyes:
-        parts.append(f"{eyes.lower()} eyes")
-
-    eyebrows = features.get("Eyebrows")
-    if eyebrows:
-        parts.append(f"{eyebrows.lower()} eyebrows")
-
     # Nose
     nose = features.get("Nose")
     if nose:
@@ -164,6 +186,13 @@ def build_forensic_prompt(
     marks = features.get("Distinguishing marks")
     if marks and marks != "None":
         parts.append(marks.lower())
+
+    # Spectacles
+    glasses = features.get("Spectacles")
+    tint = features.get("Spectacles Tint")
+    if glasses and glasses != "None":
+        tint_str = f" with {tint.lower()} lenses" if tint and tint != "None" else ""
+        parts.append(f"wearing {glasses.lower()} shaped spectacles{tint_str}")
 
     # Style tokens for quality
     quality_tokens = (
@@ -207,22 +236,29 @@ def build_refinement_prompt(
     ]
 
     # Re-use most of the descriptive parts
-    for cat in ["Face shape", "Jawline", "Eyes", "Eyebrows", "Nose", "Mouth / Lips", "Skin tone"]:
+    for cat in ["Ethnicity", "Face shape", "Jawline", "Eyes", "Eyebrows", "Nose", "Mouth / Lips", "Skin tone"]:
         val = features.get(cat)
         if val:
             if cat == "Mouth / Lips":
                 parts.append(f"{val.lower()} lips")
+            elif cat == "Ethnicity":
+                parts.append(f"{val.lower()} ethnicity")
             else:
                 parts.append(f"{val.lower()} {cat.lower()}")
 
-    # Hair
+    # Eye Color (Weighted for Phase II)
+    eye_color = features.get("Eye color")
+    if eye_color:
+        parts.append(f"({eye_color.lower()} eyes:1.4)")
+
+    # Hair (Weighted for better adherence in Refinement)
     hair_style = features.get("Hair style")
     hair_color = features.get("Hair color")
     if hair_style and hair_style != "Bald":
-        hair_desc = f"{hair_color.lower()} {hair_style.lower()} hair" if hair_color else f"{hair_style.lower()} hair"
+        hair_desc = f"({hair_color.lower()} {hair_style.lower()} hair:1.3)" if hair_color else f"({hair_style.lower()} hair:1.3)"
         parts.append(hair_desc)
     elif hair_style == "Bald":
-        parts.append("bald head")
+        parts.append("(bald head:1.3)")
 
     # Facial hair
     facial_hair = features.get("Facial hair")
@@ -234,12 +270,21 @@ def build_refinement_prompt(
     if marks and marks != "None":
         parts.append(marks.lower())
 
+    # Spectacles (Weighted for Phase II)
+    glasses = features.get("Spectacles")
+    tint = features.get("Spectacles Tint")
+    if glasses and glasses != "None":
+        tint_str = f" with {tint.lower()} lenses" if tint and tint != "None" else ""
+        parts.append(f"(wearing {glasses.lower()} shaped spectacles{tint_str}:1.3)")
+
     # Quality tokens for photorealism
     photo_tokens = (
         "hyper-realistic face, highly detailed skin texture, pores, 8k resolution, "
         "cinematic lighting, masterpiece, sharp focus, professional photography, "
         "detailed eyes, detailed hair texture"
     )
+    if hair_color:
+        photo_tokens += f", {hair_color.lower()} hair color"
 
     prompt = ", ".join(parts) + ", " + photo_tokens
 

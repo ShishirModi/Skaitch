@@ -433,6 +433,16 @@ with st.sidebar:
         selected_features["Age range"] = st.selectbox(
             "Age range", FACIAL_FEATURES["Age range"], index=1
         )
+    # Ethnicity + Skin Tone row
+    col_eth, col_st = st.columns(2)
+    with col_eth:
+        selected_features["Ethnicity"] = st.selectbox(
+            "Ethnicity", FACIAL_FEATURES["Ethnicity"], index=0
+        )
+    with col_st:
+        selected_features["Skin tone"] = st.selectbox(
+            "Skin tone", FACIAL_FEATURES["Skin tone"], index=2
+        )
 
     # Face structure row
     col_fs, col_jl = st.columns(2)
@@ -449,14 +459,19 @@ with st.sidebar:
     # Eyes + Brows row
     col_e, col_eb = st.columns(2)
     with col_e:
-        feature_val = st.selectbox("Eyes", FACIAL_FEATURES["Eyes"])
+        feature_val = st.selectbox("Eyes shape", FACIAL_FEATURES["Eyes"])
         selected_features["Eyes"] = feature_val
         st.markdown(get_svg_html(VISUAL_AIDS["Eyes"][feature_val]), unsafe_allow_html=True)
-        
+
     with col_eb:
-        selected_features["Eyebrows"] = st.selectbox(
-            "Eyebrows", FACIAL_FEATURES["Eyebrows"]
+        selected_features["Eye color"] = st.selectbox(
+            "Eye color", FACIAL_FEATURES["Eye color"], index=0
         )
+
+    # Eyebrows row
+    selected_features["Eyebrows"] = st.selectbox(
+        "Eyebrows", FACIAL_FEATURES["Eyebrows"]
+    )
 
     # Nose + Mouth row
     col_n, col_m = st.columns(2)
@@ -470,10 +485,7 @@ with st.sidebar:
             "Mouth / Lips", FACIAL_FEATURES["Mouth / Lips"]
         )
 
-    # Skin tone
-    selected_features["Skin tone"] = st.selectbox(
-        "Skin tone", FACIAL_FEATURES["Skin tone"], index=2
-    )
+    # (Skin tone removed from here, moved up to Ethnicity row)
 
     # ── Section: Hair ──────────────────────────────────────────────────
     st.markdown(
@@ -497,6 +509,25 @@ with st.sidebar:
     selected_features["Facial hair"] = st.selectbox(
         "Facial hair", FACIAL_FEATURES["Facial hair"]
     )
+
+    # ── Section: Accessories ──────────────────────────────────────────
+    st.markdown(
+        '<div class="sidebar-section">'
+        '<span class="icon">👓</span>'
+        '<span class="label">Accessories</span>'
+        "</div>",
+        unsafe_allow_html=True,
+    )
+
+    col_sp, col_ti = st.columns(2)
+    with col_sp:
+        selected_features["Spectacles"] = st.selectbox(
+            "Spectacles shape", FACIAL_FEATURES["Spectacles"]
+        )
+    with col_ti:
+        selected_features["Spectacles Tint"] = st.selectbox(
+            "Spectacles tint", FACIAL_FEATURES["Spectacles Tint"]
+        )
 
     # ── Section: Distinguishing Marks ──────────────────────────────────
     st.markdown(
