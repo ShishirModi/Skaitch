@@ -153,20 +153,24 @@ def build_forensic_prompt(
 
     # Eyes & brows
     eyes = features.get("Eyes")
-    # Nose
+    eye_color = features.get("Eye color")
+    if eye_color:
+        parts.append(f"{eye_color.lower()} eyes")
+    if eyes:
+        parts.append(f"{eyes.lower()} shaped eyes")
+
+    eyebrows = features.get("Eyebrows")
+    if eyebrows:
+        parts.append(f"{eyebrows.lower()} eyebrows")
+
+    # Nose & Mouth
     nose = features.get("Nose")
     if nose:
         parts.append(f"{nose.lower()} nose")
 
-    # Mouth
     mouth = features.get("Mouth / Lips")
     if mouth:
         parts.append(f"{mouth.lower()} lips")
-
-    # Skin
-    skin = features.get("Skin tone")
-    if skin:
-        parts.append(f"{skin.lower()} skin tone")
 
     # Hair
     hair_style = features.get("Hair style")
@@ -236,20 +240,22 @@ def build_refinement_prompt(
     ]
 
     # Re-use most of the descriptive parts
-    for cat in ["Ethnicity", "Face shape", "Jawline", "Eyes", "Eyebrows", "Nose", "Mouth / Lips", "Skin tone"]:
+    for cat in ["Ethnicity", "Skin tone", "Face shape", "Jawline", "Eyes", "Eyebrows", "Nose", "Mouth / Lips"]:
         val = features.get(cat)
         if val:
             if cat == "Mouth / Lips":
                 parts.append(f"{val.lower()} lips")
             elif cat == "Ethnicity":
                 parts.append(f"{val.lower()} ethnicity")
+            elif cat == "Eyes":
+                parts.append(f"{val.lower()} shaped eyes")
             else:
                 parts.append(f"{val.lower()} {cat.lower()}")
 
-    # Eye Color (Weighted for Phase II)
+    # Chromatic Details (Weighted for Phase II)
     eye_color = features.get("Eye color")
     if eye_color:
-        parts.append(f"({eye_color.lower()} eyes:1.4)")
+        parts.append(f"({eye_color.lower()} eyes:1.6)")
 
     # Hair (Weighted for better adherence in Refinement)
     hair_style = features.get("Hair style")
@@ -285,6 +291,8 @@ def build_refinement_prompt(
     )
     if hair_color:
         photo_tokens += f", {hair_color.lower()} hair color"
+    if eye_color:
+        photo_tokens += f", {eye_color.lower()} eye color"
 
     prompt = ", ".join(parts) + ", " + photo_tokens
 

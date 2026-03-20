@@ -410,7 +410,6 @@ with st.sidebar:
                 st.session_state.admin_mode = False
                 st.rerun()
 
-    forensic_mode = True
     
     # ── Section: Facial Features ───────────────────────────────────────
     st.markdown(
