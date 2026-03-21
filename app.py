@@ -803,8 +803,17 @@ elif st.session_state.v2_stage == "editing" and st.session_state.v2_selected_ske
                 negative_prompt=edit_neg,
                 strength=edit_strength,
             )
-            # Run CodeFormer cleanup after each edit
-            edited_sketch = run_codeformer(edited_sketch)
+            
+            # Fix 3: Bypass CodeFormer cleanup after iterative edits.
+            # CodeFormer has a strong identity-preservation bias that forcefully reverts
+            # subtle geometric edits back to the "average" face structure. We want 
+            # to preserve the raw edits made directly by SDXL.
+            # edited_sketch = run_codeformer(edited_sketch)
+            
+            # Fix 4: Force UI Cache Busting
+            # Streamlit aggressively caches st.image based on object ID/hash. Create a 
+            # shallow copy to guarantee a new object pointer in memory.
+            edited_sketch = edited_sketch.copy()
         
         st.session_state.v2_edit_history.append(edited_sketch)
         st.session_state.v2_selected_sketch = edited_sketch

@@ -338,11 +338,20 @@ def build_edit_prompt(
     Returns:
         (prompt, negative_prompt) tuple for the i2i pass.
     """
-    # Start with the base forensic prompt
-    base_prompt, neg = build_forensic_prompt(features, style, extra_details="")
+    # Fix 2: Prompt Isolation. Decrease the density of the base prompt so the
+    # i2i model isn't gravitationally bound to the exact same starting structural identity.
+    gender = features.get("Gender", "person")
+    age = features.get("Age range", "adult")
+    ethnicity = features.get("Ethnicity", "")
+    
+    # Lightweight base
+    base_prompt = f"{style} of a {ethnicity.lower()} {gender.lower()} face, age {age}"
 
-    # Append the weighted edit instruction
+    # Append the heavily weighted edit instruction
     if edit_instruction.strip():
         base_prompt += f", ({edit_instruction.strip()}:1.5)"
+        
+    # Append boosters
+    base_prompt += ", best quality, masterpiece, highly detailed face"
 
-    return base_prompt, neg
+    return base_prompt, FORENSIC_NEGATIVE
