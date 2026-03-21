@@ -95,7 +95,7 @@ FORENSIC_NEGATIVE = (
     "color photograph, oil painting, cartoon, anime, 3d render, CGI, watercolor, "
     "blurry, low quality, low resolution, pixelated, distorted face, asymmetric face, "
     "extra fingers, deformed features, watermark, signature, text, frame, border, "
-    "background clutter, multiple people, accessories, jewelry, glasses"
+    "background clutter, multiple people, jewelry"
 )
 
 # ─── Recommended Defaults ────────────────────────────────────────────────────

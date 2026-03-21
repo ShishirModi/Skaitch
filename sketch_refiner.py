@@ -19,8 +19,11 @@ def run_sketch_edit(
     """Apply a targeted edit to an existing sketch using SDXL Image-to-Image.
 
     This function takes the already-loaded SDXL Base pipeline (text-to-image)
-    and wraps it with StableDiffusionXLImg2ImgPipeline for image-to-image
-    denoising. The 'strength' parameter controls how much the original sketch
+    and converts it to an i2i pipeline using `from_pipe()`. This method
+    correctly inherits all memory optimization hooks (CPU offloading, etc.)
+    without registering duplicate hooks.
+
+    The 'strength' parameter controls how much the original sketch
     is preserved:
         - 0.2: Very subtle change (slight reshaping)
         - 0.35: Default — noticeable but identity-preserving
@@ -40,24 +43,18 @@ def run_sketch_edit(
     Returns:
         The edited sketch as a PIL Image.
     """
-    # Convert the text-to-image pipeline to image-to-image mode.
-    # This shares all the same weights; no additional VRAM is needed.
-    i2i_pipe = StableDiffusionXLImg2ImgPipeline(
-        vae=pipe.vae,
-        text_encoder=pipe.text_encoder,
-        text_encoder_2=pipe.text_encoder_2,
-        tokenizer=pipe.tokenizer,
-        tokenizer_2=pipe.tokenizer_2,
-        unet=pipe.unet,
-        scheduler=pipe.scheduler,
-    )
-
-    # Inherit the memory optimization from the parent pipeline
-    if torch.cuda.is_available():
-        i2i_pipe.enable_model_cpu_offload()
+    # Convert the text-to-image pipeline to image-to-image mode using from_pipe().
+    # This correctly inherits ALL memory optimization hooks (CPU offloading)
+    # from the parent pipeline. Do NOT call enable_model_cpu_offload() again —
+    # doing so registers duplicate hooks that corrupt inference.
+    i2i_pipe = StableDiffusionXLImg2ImgPipeline.from_pipe(pipe)
 
     # Ensure sketch is RGB and at the correct resolution
     sketch_pil = sketch_pil.convert("RGB")
+
+    # Clear any fragmented VRAM before the i2i pass
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
 
     # Run the i2i pass
     result = i2i_pipe(

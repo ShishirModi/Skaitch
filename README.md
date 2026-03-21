@@ -36,10 +36,9 @@ Phase I translates semantic morphological descriptors into a high-detail pencil 
 
 The refinement phase transforms the forensic sketch into a photographic-quality evidence portrait.
 
-* **Dynamic Feature Synchronization:** Feature selections (Hair Color, Eyes, Skin Tone, etc.) are propagated from Phase I to Phase II. This ensures the photorealistic result honors the specific traits selected by the investigator.
-* **Dynamic Feature Synchronization:** Feature selections (Ethnicity, Eye Color, Hair, etc.) are propagated from Phase I to Phase II. This ensures the photorealistic result honors the specific traits selected by the investigator.
-* **Morphological Guidance:** Uses **SDXL-ControlNet (Canny)** with an optimized **0.70 conditioning scale** to anchor the photographic synthesis to the sketch's geometry.
-* **Refinement Precision:** Implements **Weighted Prompting** (e.g., 1.4x for eyes, 1.3x for hair/glasses) to prevent the source sketch from overriding color and accessory instructions.
+* **Dynamic Feature Synchronization:** Feature selections (Ethnicity, Eye Color, Hair, Spectacles, etc.) are propagated from Phase I to Phase II. This ensures the photorealistic result honors the specific traits selected by the investigator.
+* **Morphological Guidance:** Uses **SDXL-ControlNet (Canny)** with an optimized **0.65 conditioning scale** to anchor the photographic synthesis to the sketch's geometry while allowing prompt-driven chromatic accuracy.
+* **Refinement Precision:** Implements **Weighted Prompting** (1.6x for eye color, 1.3x for hair/spectacles) to prevent the source sketch from overriding color and accessory instructions.
 * **Comprehensive Morphology:** Supports a global ethnicity library (East Asian, South Asian, etc.) and specialized accessories like frame-shaped spectacles with adjustable tints.
 
 ---
