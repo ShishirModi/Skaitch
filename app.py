@@ -52,124 +52,124 @@ st.markdown(
     """
     <style>
     /* ── Typography & Base Theme ─────────────────────────────────────── */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
-    /* Accent colour justification: Forensic Cyan (#06b6d4) provides a cold, 
-       clinical precision fitting for a law enforcement intelligence dashboard,
-       standing out against the Slate dark mode without feeling overly flashy. */
+    /* Accent colour justification: Charcoal (#1C1C1E) and Amber (#F59E0B) 
+       create a premium, Stripe-like B2B SaaS aesthetic. Pure white surfaces 
+       with layered shadows provide depth, clarity, and modern professionalism. */
 
     html, body, [class*="st-"] {
         font-family: 'Inter', sans-serif;
+        color: #1C1C1E;
     }
     
     .stApp {
-        background-color: #020617; /* Very dark slate */
+        background-color: #FFFFFF;
     }
 
-    /* Restore Streamlit icon fonts */
-    [class*="material-symbols"],
-    [data-testid*="Icon"],
-    [data-testid*="stIcon"],
-    .st-icon {
+    [class*="material-symbols"], [data-testid*="Icon"], [data-testid*="stIcon"], .st-icon {
         font-family: 'Material Symbols Rounded', sans-serif !important;
+        color: #1C1C1E;
     }
 
     /* ── Global Layout tweaks ────────────────────────────────────────── */
     .block-container {
         padding-top: 2rem;
-        padding-bottom: 2.5rem;
-        max-width: 1300px;
+        padding-bottom: 3rem;
+        max-width: 1200px;
     }
 
     /* ── Header ──────────────────────────────────────────────────────── */
+    /* Light, sharp, premium header replacing the dark gradient */
     .main-header {
-        background: #0f172a; /* Slate 900 */
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        padding: clamp(1.2rem, 4vw, 1.8rem) clamp(1.5rem, 4vw, 2.2rem);
-        border-radius: 12px;
-        margin-bottom: 2rem;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        background: #FFFFFF;
+        border-bottom: 2px solid #F59E0B; /* Subtle amber anchoring line */
+        padding: clamp(1rem, 3vw, 1.5rem) 0;
+        margin-bottom: 2.5rem;
     }
     .main-header h1 {
         margin: 0;
-        font-size: clamp(1.4rem, 3vw, 1.8rem);
-        font-weight: 600;
-        letter-spacing: -0.5px;
-        color: #f8fafc;
+        font-size: clamp(1.6rem, 3vw, 2rem);
+        font-weight: 700;
+        letter-spacing: -0.8px;
+        color: #1C1C1E;
         display: flex;
         align-items: center;
-        gap: 0.6rem;
+        gap: 0.5rem;
     }
     .main-header p {
-        margin: 0.4rem 0 0 0;
-        color: #94a3b8;
-        font-size: 0.95rem;
+        margin: 0.3rem 0 0 0;
+        color: #6E6E73; /* Medium grey */
+        font-size: 1rem;
         font-weight: 400;
-        letter-spacing: 0.3px;
+        letter-spacing: -0.2px;
     }
 
     /* ── Sidebar ─────────────────────────────────────────────────────── */
     [data-testid="stSidebar"] {
-        background-color: #020617 !important;
-        border-right: 1px solid rgba(255, 255, 255, 0.06);
+        background-color: #F8F8F7 !important; /* Warm light grey */
+        border-right: 1px solid rgba(0, 0, 0, 0.06);
     }
     .sidebar-section {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
-        margin: 1.5rem 0 0.8rem 0;
-        padding-bottom: 0.4rem;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        gap: 0.4rem;
+        margin: 1.8rem 0 0.8rem 0;
+        padding-bottom: 0.3rem;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
     }
     .sidebar-section .icon {
         font-size: 1rem;
-        opacity: 0.8;
+        color: #1C1C1E;
     }
     .sidebar-section .label {
         font-size: 0.72rem;
         font-weight: 600;
-        letter-spacing: 1.2px;
+        letter-spacing: 0.8px;
         text-transform: uppercase;
-        color: #94a3b8;
+        color: #6E6E73;
     }
     .sidebar-title {
-        font-size: 1.3rem;
+        font-size: 1.4rem;
         font-weight: 700;
-        color: #f8fafc;
+        color: #1C1C1E;
         margin-bottom: 0.1rem;
-        letter-spacing: -0.4px;
+        letter-spacing: -0.6px;
     }
     .sidebar-subtitle {
         font-size: 0.7rem;
-        color: #06b6d4; /* Forensic Cyan */
-        margin-bottom: 1.5rem;
+        color: #F59E0B; /* Amber */
+        margin-bottom: 2rem;
         font-weight: 600;
         font-family: 'JetBrains Mono', monospace;
-        letter-spacing: 1px;
+        letter-spacing: 0.8px;
         text-transform: uppercase;
     }
 
     /* ── Main Canvas Feature Cards ───────────────────────────────────── */
-    .feature-card {
-        background: #0f172a;
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        border-radius: 10px;
-        padding: 1.5rem;
-        margin-bottom: 1.2rem;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    }
     .feature-card-title {
-        font-size: 0.75rem;
+        font-size: 0.8rem;
         font-weight: 600;
-        color: #06b6d4;
+        color: #1C1C1E;
         text-transform: uppercase;
-        letter-spacing: 1.5px;
+        letter-spacing: 0.8px;
         margin-bottom: 1.2rem;
         display: flex;
         align-items: center;
         gap: 0.5rem;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
         padding-bottom: 0.6rem;
+    }
+    
+    /* Override Streamlit's native st.container(border=True) to match our shadow system */
+    [data-testid="stVerticalBlockBorderWrapper"] {
+        border: 1px solid rgba(0, 0, 0, 0.04) !important;
+        border-radius: 12px !important;
+        background: #FFFFFF !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02), 0 10px 24px rgba(0,0,0,0.04) !important;
+        padding: 0.5rem !important;
+        margin-bottom: 1.2rem !important;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
 
     /* ── Buttons ─────────────────────────────────────────────────────── */
@@ -178,151 +178,168 @@ st.markdown(
         font-weight: 500;
         transition: all 0.2s ease;
         padding: 0.6rem 1rem;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        background: #1e293b;
-        color: #e2e8f0;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        background: #FFFFFF;
+        color: #1C1C1E;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.03);
     }
     .stButton > button:hover {
-        background: #334155;
-        border-color: rgba(255, 255, 255, 0.2);
-        color: #f8fafc;
+        background: #F8F8F7;
+        border-color: rgba(0, 0, 0, 0.2);
+        color: #000000;
     }
-    /* Primary Action Buttons */
+    
+    /* Primary Action Buttons (Generate CTA) */
     div[data-testid="stButton"] button[kind="primary"] {
-        background: #06b6d4 !important;
-        color: #082f49 !important; /* Cyan 900 text */
-        border: none !important;
+        background: #FFFFFF !important;
+        color: #1C1C1E !important;
+        border: 2px solid #F59E0B !important; /* Amber border at rest */
         font-weight: 600;
-        letter-spacing: 0.5px;
-        box-shadow: 0 4px 14px rgba(6, 182, 212, 0.2) !important;
+        letter-spacing: 0.3px;
+        box-shadow: 0 4px 10px rgba(245, 158, 11, 0.1) !important;
     }
     div[data-testid="stButton"] button[kind="primary"]:hover {
-        background: #0891b2 !important;
+        background: #F59E0B !important; /* Solid Amber on hover */
+        color: #FFFFFF !important;
         transform: translateY(-1px);
-        box-shadow: 0 6px 20px rgba(6, 182, 212, 0.3) !important;
+        box-shadow: 0 6px 15px rgba(245, 158, 11, 0.25) !important;
     }
 
     /* ── Variant Cards (Sketch Output) ───────────────────────────────── */
     .variant-card {
-        background: #0f172a;
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: #FFFFFF;
+        border: 1px solid rgba(0, 0, 0, 0.05);
         border-radius: 12px;
         padding: 1.2rem;
         margin-bottom: 1.5rem;
-        box-shadow: inset 0 2px 10px rgba(0,0,0,0.2), 0 4px 15px rgba(0,0,0,0.3);
-        transition: border-color 0.2s ease;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.03), 0 8px 20px rgba(0,0,0,0.06);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
     .variant-card:hover {
-        border-color: rgba(6, 182, 212, 0.4);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05), 0 12px 28px rgba(0,0,0,0.08);
+        border-color: rgba(0, 0, 0, 0.08);
     }
 
     /* ── Parameter Chips / Metadata Table ────────────────────────────── */
     .param-card {
-        background: #0f172a;
-        border: 1px solid rgba(255, 255, 255, 0.06);
+        background: #FFFFFF;
+        border: 1px solid rgba(0, 0, 0, 0.06);
         border-radius: 8px;
         padding: 1rem 1.2rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.02);
     }
     .param-card h4 {
         margin: 0 0 0.8rem 0;
         font-size: 0.72rem;
         font-weight: 600;
-        color: #94a3b8;
+        color: #6E6E73;
         text-transform: uppercase;
-        letter-spacing: 1.2px;
+        letter-spacing: 0.8px;
     }
     .param-row {
         display: flex;
         justify-content: space-between;
         align-items: center;
         padding: 0.4rem 0;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        border-bottom: 1px solid rgba(0, 0, 0, 0.04);
         font-family: 'JetBrains Mono', monospace;
         font-size: 0.82rem;
     }
     .param-row:last-child { border-bottom: none; }
     .param-row .key {
-        color: #64748b;
+        color: #6E6E73;
     }
     .param-row .val {
-        color: #06b6d4;
+        color: #1C1C1E;
         font-weight: 500;
     }
 
     /* ── Prompt preview ──────────────────────────────────────────────── */
     .prompt-preview {
-        background: #020617;
-        border: 1px solid rgba(255, 255, 255, 0.05);
+        background: #F8F8F7;
+        border: 1px solid rgba(0, 0, 0, 0.05);
         border-radius: 8px;
         padding: 1rem;
         font-size: 0.82rem;
-        color: #94a3b8;
+        color: #1C1C1E;
         line-height: 1.6;
         margin-top: 0.5rem;
         max-height: 120px;
         overflow-y: auto;
         font-family: 'JetBrains Mono', monospace;
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
     }
     .prompt-preview-label {
         font-size: 0.7rem;
         font-weight: 600;
         text-transform: uppercase;
-        letter-spacing: 1.2px;
-        color: #64748b;
+        letter-spacing: 0.8px;
+        color: #6E6E73;
         margin-top: 1rem;
         margin-bottom: 0.4rem;
     }
 
     /* ── Success banner ──────────────────────────────────────────────── */
     .success-banner {
-        background: rgba(6, 182, 212, 0.05);
-        border: 1px solid rgba(6, 182, 212, 0.2);
-        border-radius: 8px;
+        background: #FFFFFF;
+        border: 1px solid rgba(0,0,0,0.06);
+        border-left: 4px solid #F59E0B; /* Amber accent border */
+        border-radius: 6px;
         padding: 0.8rem 1.2rem;
         display: flex;
         align-items: center;
         gap: 0.8rem;
         margin-bottom: 1.5rem;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.03);
     }
     .success-banner .dot {
-        width: 8px; height: 8px;
-        border-radius: 50%;
-        background: #06b6d4;
-        flex-shrink: 0;
-        box-shadow: 0 0 8px rgba(6, 182, 212, 0.6);
+        display: none; /* Hide dot in flat stripe style */
     }
     .success-banner span {
-        color: #e2e8f0;
+        color: #1C1C1E;
         font-size: 0.88rem;
         font-weight: 500;
-        letter-spacing: 0.3px;
     }
+
+    /* ── Input Labels (Small uppercase) ──────────────────────────────── */
+    .stSelectbox label p, .stTextInput label p, .stNumberInput label p, .stSlider label p {
+        font-size: 0.7rem !important;
+        font-weight: 600 !important;
+        color: #6E6E73 !important;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    /* ── Sliders & Toggles (Amber) ───────────────────────────────────── */
+    /* Streamlit slider overrides requires complex targeting, but we let Streamlit handle theming where possible
+       or rely on default primaryColor in config.toml if requested later. For now we use standard Streamlit slider */
 
     /* ── Image container ─────────────────────────────────────────────── */
     .stImage img {
         border-radius: 8px;
-        border: 1px solid rgba(255,255,255,0.05);
+        border: 1px solid rgba(0,0,0,0.05);
     }
     
     /* Phase II Featured Image */
     .featured-output img {
         border-radius: 12px;
-        border: 1px solid rgba(6, 182, 212, 0.3);
-        box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+        border: 1px solid rgba(245, 158, 11, 0.2); /* Amber tint */
+        box-shadow: 0 12px 40px rgba(0,0,0,0.1);
     }
 
     /* ── Download button override ─────────────────────────────────────── */
     .stDownloadButton > button {
         background: transparent;
-        color: #06b6d4;
-        border: 1px solid rgba(6, 182, 212, 0.3);
+        color: #1C1C1E;
+        border: 1px solid rgba(0, 0, 0, 0.1);
         border-radius: 8px;
         transition: all 0.2s ease;
     }
     .stDownloadButton > button:hover {
-        background: rgba(6, 182, 212, 0.08);
-        border-color: rgba(6, 182, 212, 0.5);
-        color: #22d3ee;
+        background: #FFFBEB; /* very light amber */
+        border-color: #F59E0B;
+        color: #D97706; /* darker amber */
     }
 
     /* ── Hide Streamlit branding ─────────────────────────────────────── */
@@ -373,8 +390,11 @@ def run_codeformer(img: Image.Image) -> Image.Image:
 st.markdown(
     """
     <div class="main-header">
-        <h1>🔍 Skaitch — Forensic Composite Suite</h1>
-        <p>Professional generative facial sketching from structured categorical descriptors</p>
+        <h1>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1C1C1E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            Skaitch
+        </h1>
+        <p>Forensic Composite Suite · Generative morphology matching pipeline</p>
     </div>
     """,
     unsafe_allow_html=True,
@@ -675,7 +695,7 @@ if st.session_state.v2_stage == "drafting" and st.session_state.v2_drafts:
             st.image(img, use_container_width=True)
             
         with col_actions:
-            st.markdown(f"<h3 style='margin-bottom:0.2rem;color:#e2e8f0;'>Variation {idx+1}</h3>", unsafe_allow_html=True)
+            st.markdown(f"<h3 style='margin-bottom:0.2rem;color:#1C1C1E;'>Variation {idx+1}</h3>", unsafe_allow_html=True)
             st.markdown("<span style='color:#64748b;font-family:\"JetBrains Mono\", monospace;font-size:0.85rem;'>Seed: <span style='color:#06b6d4;'>{}</span></span>".format(st.session_state.v2_draft_seeds[idx]), unsafe_allow_html=True)
             
             st.markdown("<br><br>", unsafe_allow_html=True)
@@ -763,7 +783,7 @@ elif st.session_state.v2_stage == "editing" and st.session_state.v2_selected_ske
             go_back = st.button("← Back to Drafts", use_container_width=True, key="back_to_drafts")
 
     with col_sketch:
-        st.markdown("<h4 style='color:#e2e8f0;font-weight:600;'>🖌️ Paint the area to edit</h4>", unsafe_allow_html=True)
+        st.markdown("<h4 style='color:#1C1C1E;font-weight:600;'>🖌️ Paint the area to edit</h4>", unsafe_allow_html=True)
         
         bg_image = st.session_state.v2_selected_sketch
         
@@ -776,7 +796,7 @@ elif st.session_state.v2_stage == "editing" and st.session_state.v2_selected_ske
         canvas_result = st_canvas(
             fill_color="rgba(255, 255, 255, 1)",  # Pure white filling
             stroke_width=brush_size,
-            stroke_color="#FFFFFF",
+            stroke_color="#F59E0B",
             background_image=bg_image,
             update_streamlit=True,
             height=display_height,
@@ -870,12 +890,12 @@ elif st.session_state.v2_stage == "rendering" and st.session_state.v2_selected_s
     col_sketch_final, col_photo = st.columns([2, 3], gap="large")
 
     with col_sketch_final:
-        st.markdown("<h4 style='color:#94a3b8;font-weight:600;'>🖌️ Finalized Sketch</h4>", unsafe_allow_html=True)
+        st.markdown("<h4 style='color:#6E6E73;font-weight:600;'>🖌️ Finalized Sketch</h4>", unsafe_allow_html=True)
         st.image(main_image, use_container_width=True)
         st.caption(f"*Seed {st.session_state.v2_selected_seed}  ·  {len(st.session_state.v2_edit_history)} edit(s)*")
 
     with col_photo:
-        st.markdown("<h4 style='color:#06b6d4;font-weight:700;'>📸 Photorealistic Phase II Refinement</h4>", unsafe_allow_html=True)
+        st.markdown("<h4 style='color:#1C1C1E;font-weight:700;'>📸 Photorealistic Phase II Refinement</h4>", unsafe_allow_html=True)
         with st.spinner("🤖 SDXL-ControlNet Refinement — Generating Photorealistic Output …"):
             # Clear VRAM before Phase II to ensure maximum headroom
             if torch.cuda.is_available():
