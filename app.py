@@ -2,6 +2,21 @@
 # Purpose: Streamlit frontend for Stable Diffusion image generation
 
 import streamlit as st
+
+# Monkey-patch to fix streamlit-drawable-canvas compatibility with modern Streamlit (>=1.30.0)
+# which removed the internal st_image.image_to_url function.
+import streamlit.elements.image as st_image
+if not hasattr(st_image, "image_to_url"):
+    import base64
+    import io
+    def _monkeypatch_image_to_url(image, width, clamp, channels, output_format, image_id):
+        img_buffer = io.BytesIO()
+        image.save(img_buffer, format=output_format)
+        img_str = base64.b64encode(img_buffer.getvalue()).decode("utf-8")
+        return f"data:image/{output_format.lower()};base64,{img_str}"
+    
+    st_image.image_to_url = _monkeypatch_image_to_url
+
 import torch
 from diffusers import StableDiffusionXLPipeline
 from PIL import Image
