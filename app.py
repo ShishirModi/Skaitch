@@ -361,18 +361,25 @@ def ensure_models_exist():
     download_model.check_and_download_models()
     return True
 
-@st.cache_resource(show_spinner="Loading SDXL model into VRAM …")
+# Bypass Streamlit cache wrapping which corrupts accelerate hooks.
+# Use Streamlit session state or a global module variable to hold the pipeline securely.
+_PIPELINE_CACHE = None
+
 def load_pipeline():
-    ensure_models_exist()
-    pipe = StableDiffusionXLPipeline.from_pretrained(
-        MODEL_PATH, 
-        torch_dtype=torch.float16, 
-        use_safetensors=True
-    )
-    if torch.cuda.is_available():
-        # Use model-level CPU offloading to save VRAM on T4
-        pipe.enable_model_cpu_offload()
-    return pipe
+    global _PIPELINE_CACHE
+    if _PIPELINE_CACHE is None:
+        with st.spinner("Loading SDXL model into VRAM …"):
+            ensure_models_exist()
+            pipe = StableDiffusionXLPipeline.from_pretrained(
+                MODEL_PATH, 
+                torch_dtype=torch.float16, 
+                use_safetensors=True
+            )
+            if torch.cuda.is_available():
+                # Use model-level CPU offloading to save VRAM on T4
+                pipe.enable_model_cpu_offload()
+            _PIPELINE_CACHE = pipe
+    return _PIPELINE_CACHE
 
 def run_codeformer(img: Image.Image) -> Image.Image:
     """True CodeFormer face restoration. Returns original on failure."""
