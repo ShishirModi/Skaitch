@@ -9,7 +9,7 @@ safetensors
 accelerate>=0.30.0
 huggingface_hub
 pillow
-streamlit
+streamlit==1.32.0
 scipy
 opencv-python-headless
 python-dotenv
@@ -18,7 +18,6 @@ basicsr
 facexlib
 xformers
 python-dotenv
-streamlit-drawable-canvas
 
 # Note: Photorealistic Refinement (Phase 2) is automatically initialized via SDXL ControlNet
 # and runs on native PyTorch/Diffusers. All weights are fetched to NVMe automatically.

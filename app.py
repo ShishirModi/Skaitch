@@ -3,19 +3,7 @@
 
 import streamlit as st
 
-# Monkey-patch to fix streamlit-drawable-canvas compatibility with modern Streamlit (>=1.30.0)
-# which removed the internal st_image.image_to_url function.
-import streamlit.elements.image as st_image
-if not hasattr(st_image, "image_to_url"):
-    import base64
-    import io
-    def _monkeypatch_image_to_url(image, width, clamp, channels, output_format, image_id):
-        img_buffer = io.BytesIO()
-        image.save(img_buffer, format=output_format)
-        img_str = base64.b64encode(img_buffer.getvalue()).decode("utf-8")
-        return f"data:image/{output_format.lower()};base64,{img_str}"
-    
-    st_image.image_to_url = _monkeypatch_image_to_url
+
 
 import torch
 from diffusers import StableDiffusionXLPipeline
@@ -352,8 +340,12 @@ st.markdown(
 )
 
 # ─── Constants ─────────────────────────────────────────────────────────────────
-MODEL_PATH = "/opt/dlami/nvme/models/sdxl"
-CODEFORMER_PATH = "/opt/dlami/nvme/models/codeformer"
+from dotenv import load_dotenv
+load_dotenv()
+
+BASE_MODELS_DIR = os.getenv("SKAITCH_MODEL_DIR", os.path.join(os.path.dirname(__file__), "models"))
+MODEL_PATH = os.path.join(BASE_MODELS_DIR, "sdxl")
+CODEFORMER_PATH = os.path.join(BASE_MODELS_DIR, "codeformer")
 
 # ─── Cached setup & loaders ───────────────────────────────────────────────────
 @st.cache_resource(show_spinner="Verifying models on NVMe... (may take minutes on first run)")
@@ -740,7 +732,7 @@ elif st.session_state.v2_stage == "editing" and st.session_state.v2_selected_ske
     st.markdown("#### ✏️ Phase I: Iterative Sketch Refinement")
 
     # Show current sketch with Inpainting Canvas overlay
-    from streamlit_drawable_canvas import st_canvas
+    from skaitch_canvas import st_skaitch_canvas as st_canvas
     import numpy as np
     from PIL import Image
 

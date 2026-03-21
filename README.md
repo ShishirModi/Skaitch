@@ -73,15 +73,15 @@ pip install -r requirements.txt
 ```
 
 ### II. Automated Weights Initialization
-Skaitch automatically manages all weights on the NVMe drive. Simply run:
+Skaitch automatically manages all model weights. By default, they are downloaded to a local `./models/` directory inside the repository, but this can be customized securely on any platform via the `.env` file (`SKAITCH_MODEL_DIR`). Simply run:
 ```bash
 streamlit run app.py
 ```
 
 **Automated Setup Includes:**
-- **SDXL Base:** `/opt/dlami/nvme/models/sdxl/`
-- **ControlNet Canny:** `/opt/dlami/nvme/models/controlnet-canny-sdxl/`
-- **CodeFormer:** `/opt/dlami/nvme/models/codeformer/` (Weights) and `external/CodeFormer/` (Repo)
+- **SDXL Base:** `$SKAITCH_MODEL_DIR/sdxl/`
+- **ControlNet Canny:** `$SKAITCH_MODEL_DIR/controlnet-canny-sdxl/`
+- **CodeFormer:** `$SKAITCH_MODEL_DIR/codeformer/` (Weights) and `external/CodeFormer/` (Repo)
 
 ---
 
@@ -93,7 +93,7 @@ Skaitch features a **Professional SaaS Dashboard** aesthetic utilizing a deep Sl
 - **Instrument Panel Sidebar:** GPU telemetry, parameters, and dimension controls are isolated in a clean control sidebar.
 - **Precision Visual Aids:** Custom two-tone SVG diagrams anchor trait selections with professional clarity.
 - **Draft → Select → Edit → Render:** The operator generates 3 sketch variants (displayed as vertical stacked cards), selects the best one, iteratively edits it via interactive mask painting and natural-language instructions (SDXL Inpainting), and triggers the photorealistic ControlNet pass when satisfied.
-- **Edit Controls:** Interactive drawable canvas with adjustable brush size and inpaint denoise strength (0.50–1.00). Full undo history is maintained for non-destructive editing.
+- **Edit Controls:** A proprietary, locally-hosted React Streamlit Component (`skaitch_canvas`) manages interactive masking. This guarantees 100% stability against Streamlit frontend changes, flawlessly handling base64 background rendering and dynamic brush scaling. Full undo history is maintained for non-destructive editing.
 - **Auto-Persistent Storage:** Finalized sketches and refinements are saved to `data/` with unique timestamps.
 
 ### V2 Workflow Architecture

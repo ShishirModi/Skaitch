@@ -7,9 +7,13 @@ import numpy as np
 from PIL import Image, ImageOps
 from diffusers import StableDiffusionXLControlNetPipeline, ControlNetModel, AutoencoderKL
 
-# Constants for model paths on NVMe
-SDXL_PATH = "/opt/dlami/nvme/models/sdxl"
-CONTROLNET_PATH = "/opt/dlami/nvme/models/controlnet-canny-sdxl"
+from dotenv import load_dotenv
+load_dotenv()
+
+# Constants for model paths on NVMe or local disk via env var
+BASE_MODELS_DIR = os.getenv("SKAITCH_MODEL_DIR", os.path.join(os.path.dirname(__file__), "models"))
+SDXL_PATH = os.path.join(BASE_MODELS_DIR, "sdxl")
+CONTROLNET_PATH = os.path.join(BASE_MODELS_DIR, "controlnet-canny-sdxl")
 
 # Global cache to avoid reloading on every click
 _refinement_pipe = None

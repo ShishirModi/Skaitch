@@ -9,11 +9,13 @@ SDXL_MODEL_ID = "stabilityai/stable-diffusion-xl-base-1.0"
 CODEFORMER_MODEL_URL = "https://github.com/sczhou/CodeFormer/releases/download/v0.1.0/codeformer.pth"
 CODEFORMER_REPO_URL = "https://github.com/sczhou/CodeFormer.git"
 
-SDXL_OUTPUT_DIR = "/opt/dlami/nvme/models/sdxl"
-CODEFORMER_OUTPUT_DIR = "/opt/dlami/nvme/models/codeformer"
+BASE_MODELS_DIR = os.getenv("SKAITCH_MODEL_DIR", os.path.join(os.path.dirname(__file__), "models"))
+
+SDXL_OUTPUT_DIR = os.path.join(BASE_MODELS_DIR, "sdxl")
+CODEFORMER_OUTPUT_DIR = os.path.join(BASE_MODELS_DIR, "codeformer")
 CODEFORMER_DIR = os.path.join(os.path.dirname(__file__), "external", "CodeFormer")
 CONTROLNET_MODEL_ID = "diffusers/controlnet-canny-sdxl-1.0"
-CONTROLNET_OUTPUT_DIR = "/opt/dlami/nvme/models/controlnet-canny-sdxl"
+CONTROLNET_OUTPUT_DIR = os.path.join(BASE_MODELS_DIR, "controlnet-canny-sdxl")
 
 def is_model_downloaded(directory):
     if not os.path.exists(directory):
@@ -63,7 +65,8 @@ def check_and_download_models():
         # Move weights to the repo's expected location
         repo_weights_dir = os.path.join(CODEFORMER_DIR, "weights", "CodeFormer")
         os.makedirs(repo_weights_dir, exist_ok=True)
-        subprocess.run(["cp", codeformer_path, os.path.join(repo_weights_dir, "codeformer.pth")], check=True)
+        import shutil
+        shutil.copy(codeformer_path, os.path.join(repo_weights_dir, "codeformer.pth"))
         print(f"✅ CodeFormer repository and weights installed successfully.")
     else:
         print(f"✅ CodeFormer repository already exists.")
