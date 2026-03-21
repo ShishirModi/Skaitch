@@ -82,22 +82,9 @@ streamlit run app.py
 
 ---
 
-## 6. User Interface (V2 Iterative Workflow)
+## 6. User Interface
 
-- **Draft → Select → Edit → Render:** The operator generates 3 sketch variants, selects the best one, iteratively edits it via natural-language instructions (SDXL i2i), and only triggers the photorealistic ControlNet pass when satisfied.
-- **Edit Controls:** Adjustable denoise strength (0.15–0.60) and full undo history for non-destructive editing. CodeFormer is applied after every edit.
+- **Forensic Specialty UI:** A focused, structured workstation. The legacy free-text "Free Form" mode has been removed to minimize operator error.
 - **Telemetry Overview:** Real-time monitoring of CUDA device and VRAM status in the sidebar.
-- **Auto-Persistent Storage:** Finalized sketches and refinements are automatically saved to `data/` with unique timestamps.
+- **Auto-Persistent Storage:** All sketches and refinements are automatically saved to the local `data/` directory with unique timestamps.
 
-### V2 Workflow Architecture
-
-```mermaid
-graph LR
-    A[🚀 Generate] --> B[📋 Drafting]
-    B -->|Select Variant| C[✏️ Editing]
-    C -->|Apply Edit| C
-    C -->|Undo| C
-    C -->|Finalize| D[📸 Rendering]
-    C -->|Back| B
-    D -->|Start New| A
-```

@@ -316,3 +316,33 @@ def build_sdxl_refinement_prompt(
     """Wrapper for SDXL refinement pass."""
     prompt, neg = build_refinement_prompt(features, extra_details)
     return prompt + ", best quality, highly detailed face", neg
+
+
+def build_edit_prompt(
+    features: dict[str, str],
+    edit_instruction: str,
+    style: str = "Pencil sketch",
+) -> tuple[str, str]:
+    """Build a prompt for iterative sketch editing (SDXL i2i).
+
+    Combines the original forensic feature prompt with a specific
+    edit instruction from the operator. The edit instruction is
+    given elevated weighting to ensure it takes effect even at
+    low denoise strengths.
+
+    Args:
+        features: dict mapping category name → selected option.
+        edit_instruction: Free-text edit (e.g., "make the nose more pointed").
+        style: The sketch style to maintain.
+
+    Returns:
+        (prompt, negative_prompt) tuple for the i2i pass.
+    """
+    # Start with the base forensic prompt
+    base_prompt, neg = build_forensic_prompt(features, style, extra_details="")
+
+    # Append the weighted edit instruction
+    if edit_instruction.strip():
+        base_prompt += f", ({edit_instruction.strip()}:1.5)"
+
+    return base_prompt, neg

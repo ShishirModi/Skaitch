@@ -634,7 +634,27 @@ with st.sidebar:
     st.markdown("<div style='margin-top:1.5rem'></div>", unsafe_allow_html=True)
     generate = st.button("🚀  Generate", use_container_width=True)
 
-# ─── Generation logic ─────────────────────────────────────────────────────────
+# ─── V2 Session State Initialization ──────────────────────────────────────────
+if "v2_stage" not in st.session_state:
+    st.session_state.v2_stage = "idle"  # idle | drafting | editing | rendering
+if "v2_drafts" not in st.session_state:
+    st.session_state.v2_drafts = []
+if "v2_draft_seeds" not in st.session_state:
+    st.session_state.v2_draft_seeds = []
+if "v2_selected_sketch" not in st.session_state:
+    st.session_state.v2_selected_sketch = None
+if "v2_selected_seed" not in st.session_state:
+    st.session_state.v2_selected_seed = None
+if "v2_edit_history" not in st.session_state:
+    st.session_state.v2_edit_history = []
+if "v2_features_snapshot" not in st.session_state:
+    st.session_state.v2_features_snapshot = {}
+if "v2_extra_details" not in st.session_state:
+    st.session_state.v2_extra_details = ""
+if "v2_sketch_style" not in st.session_state:
+    st.session_state.v2_sketch_style = "Pencil sketch"
+
+# ─── Generation logic (STATE 1: DRAFTING) ─────────────────────────────────────
 if generate:
     if not prompt.strip():
         st.warning("⚠️ Please enter a prompt before generating.")
@@ -670,47 +690,183 @@ if generate:
         for img in generated_images:
             processed_images.append(run_codeformer(img))
 
-    # The primary image for downstream tasks
-    main_image = processed_images[0]
+    # Store drafts in session state for variant selection
+    st.session_state.v2_stage = "drafting"
+    st.session_state.v2_drafts = processed_images
+    st.session_state.v2_draft_seeds = seeds_to_run
+    st.session_state.v2_features_snapshot = dict(selected_features)
+    st.session_state.v2_extra_details = extra_details
+    st.session_state.v2_sketch_style = sketch_style
+    st.session_state.v2_edit_history = []
+    st.session_state.v2_selected_sketch = None
 
-    # ── Success banner ─────────────────────────────────────────────────
+# ─── STATE 1: DRAFTING — Display variants with selection buttons ──────────────
+if st.session_state.v2_stage == "drafting" and st.session_state.v2_drafts:
     st.markdown(
         '<div class="success-banner">'
         '<div class="dot"></div>'
-        f"<span>{num_variations} Image{'s' if num_variations>1 else ''} generated safely</span>"
+        "<span>3 Sketch Variants Generated — Select one to refine</span>"
         "</div>",
         unsafe_allow_html=True,
     )
 
-    # ── Pipeline specific displays ──────────────────────────────────────
-    st.markdown("#### Stable Diffusion Sketches (SDXL + CodeFormer)")
+    st.markdown("#### 🖌️ Phase I: Sketch Variants (Select one to edit)")
     cols = st.columns(3, gap="medium")
-    for idx, (img, col) in enumerate(zip(processed_images, cols)):
+    for idx, (img, col) in enumerate(zip(st.session_state.v2_drafts, cols)):
         with col:
             st.image(img, use_container_width=True)
-            st.caption(f"*Variation {idx+1}*")
-    
-    st.divider()
-    col_img_refine, col_meta = st.columns([3, 2], gap="large")
+            st.caption(f"*Variation {idx+1}  ·  Seed {st.session_state.v2_draft_seeds[idx]}*")
+            if st.button(f"✅ Select Variation {idx+1}", key=f"select_v_{idx}", use_container_width=True):
+                st.session_state.v2_stage = "editing"
+                st.session_state.v2_selected_sketch = img
+                st.session_state.v2_selected_seed = st.session_state.v2_draft_seeds[idx]
+                st.session_state.v2_edit_history = [img]  # Initial history
+                st.rerun()
 
-    with col_img_refine:
-        st.markdown("#### Photorealistic Refinement (Variation 1)")
+# ─── STATE 2: EDITING — Iterative sketch refinement loop ─────────────────────
+elif st.session_state.v2_stage == "editing" and st.session_state.v2_selected_sketch is not None:
+    st.markdown(
+        '<div class="success-banner">'
+        '<div class="dot"></div>'
+        f"<span>Editing Mode — Seed {st.session_state.v2_selected_seed}</span>"
+        "</div>",
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("#### ✏️ Phase I: Iterative Sketch Refinement")
+
+    # Show current sketch
+    col_sketch, col_controls = st.columns([3, 2], gap="large")
+    
+    with col_sketch:
+        st.image(st.session_state.v2_selected_sketch, use_container_width=True)
+        st.caption(f"*Current Sketch  ·  {len(st.session_state.v2_edit_history)} version(s)*")
+
+    with col_controls:
+        st.markdown(
+            '<div class="param-card">'
+            "<h4>Edit Controls</h4>"
+            "</div>",
+            unsafe_allow_html=True,
+        )
+        
+        edit_instruction = st.text_input(
+            "What would you like to change?",
+            placeholder="e.g. make the nose more pointed, widen the jaw …",
+            help="Describe the edit. This is combined with the original features.",
+            key="edit_input",
+        )
+
+        edit_strength = st.slider(
+            "Edit Strength",
+            min_value=0.15,
+            max_value=0.60,
+            value=0.35,
+            step=0.05,
+            help="Low = subtle nudge, High = significant change. Default: 0.35",
+            key="edit_strength",
+        )
+
+        col_apply, col_undo = st.columns(2)
+        with col_apply:
+            apply_edit = st.button("🖌️ Apply Edit", use_container_width=True, key="apply_edit")
+        with col_undo:
+            can_undo = len(st.session_state.v2_edit_history) > 1
+            undo_edit = st.button("↩️ Undo", use_container_width=True, key="undo_edit", disabled=not can_undo)
+
+        st.divider()
+
+        col_finalize, col_back = st.columns(2)
+        with col_finalize:
+            finalize = st.button("🎯 Finalize → Photo", use_container_width=True, key="finalize_sketch", type="primary")
+        with col_back:
+            go_back = st.button("← Back to Drafts", use_container_width=True, key="back_to_drafts")
+
+    # Handle edit apply
+    if apply_edit and edit_instruction.strip():
+        pipe = load_pipeline()
+        
+        from prompt_builder import build_edit_prompt
+        from sketch_refiner import run_sketch_edit
+        
+        edit_prompt, edit_neg = build_edit_prompt(
+            st.session_state.v2_features_snapshot,
+            edit_instruction,
+            st.session_state.v2_sketch_style,
+        )
+        
+        with st.spinner("🖌️ Applying edit …"):
+            edited_sketch = run_sketch_edit(
+                pipe=pipe,
+                sketch_pil=st.session_state.v2_selected_sketch,
+                edit_prompt=edit_prompt,
+                negative_prompt=edit_neg,
+                strength=edit_strength,
+            )
+            # Run CodeFormer cleanup after each edit
+            edited_sketch = run_codeformer(edited_sketch)
+        
+        st.session_state.v2_edit_history.append(edited_sketch)
+        st.session_state.v2_selected_sketch = edited_sketch
+        st.rerun()
+
+    # Handle undo
+    if undo_edit and can_undo:
+        st.session_state.v2_edit_history.pop()
+        st.session_state.v2_selected_sketch = st.session_state.v2_edit_history[-1]
+        st.rerun()
+
+    # Handle back to drafts
+    if go_back:
+        st.session_state.v2_stage = "drafting"
+        st.session_state.v2_selected_sketch = None
+        st.session_state.v2_edit_history = []
+        st.rerun()
+
+    # Handle finalize → trigger rendering
+    if finalize:
+        st.session_state.v2_stage = "rendering"
+        st.rerun()
+
+# ─── STATE 3: RENDERING — Photorealistic ControlNet pass ─────────────────────
+elif st.session_state.v2_stage == "rendering" and st.session_state.v2_selected_sketch is not None:
+    st.markdown(
+        '<div class="success-banner">'
+        '<div class="dot"></div>'
+        "<span>Rendering Photorealistic Output</span>"
+        "</div>",
+        unsafe_allow_html=True,
+    )
+
+    main_image = st.session_state.v2_selected_sketch
+    features_snap = st.session_state.v2_features_snapshot
+    extra_snap = st.session_state.v2_extra_details
+
+    col_sketch_final, col_photo = st.columns(2, gap="large")
+
+    with col_sketch_final:
+        st.markdown("#### 🖌️ Finalized Sketch")
+        st.image(main_image, use_container_width=True)
+        st.caption(f"*Seed {st.session_state.v2_selected_seed}  ·  {len(st.session_state.v2_edit_history)} edit(s)*")
+
+    with col_photo:
+        st.markdown("#### 📸 Photorealistic Refinement")
         with st.spinner("🤖 SDXL-ControlNet Refinement — Generating Photorealistic Output …"):
             # Clear VRAM before Phase II to ensure maximum headroom
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
             
             try:
-                refinement_image = refinement_pipeline.run_sdxl_refinement(main_image, selected_features, extra_details)
+                refinement_image = refinement_pipeline.run_sdxl_refinement(main_image, features_snap, extra_snap)
                 refine_success = True
             except Exception as e:
-                import html
-                refine_error = html.escape(str(e))
+                import html as html_mod
+                refine_error = html_mod.escape(str(e))
                 refine_success = False
 
         if refine_success:
             st.image(refinement_image, use_container_width=True)
-            st.caption(f"*SDXL-ControlNet Refinement*")
+            st.caption("*SDXL-ControlNet Refinement*")
         else:
             st.error(f"Refinement failed: {refine_error}\n\nEnsure that the ControlNet weights are correctly downloaded to the NVMe storage.")
 
@@ -719,84 +875,75 @@ if generate:
     os.makedirs("data", exist_ok=True)
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     
-    # Check admin control before saving 
     admin_save_disabled = st.session_state.get("admin_mode", False) and st.session_state.get("Disable Auto-Save to Disk", False)
     
     if not admin_save_disabled:
-        for idx, img in enumerate(processed_images):
-            sketch_path = os.path.join("data", f"sketch_{timestamp}_v{idx+1}.png")
-            img.save(sketch_path)
+        sketch_path = os.path.join("data", f"sketch_{timestamp}_final.png")
+        main_image.save(sketch_path)
         
-        # Save the Refinement output if applicable
         if refine_success:
             refine_save_path = os.path.join("data", f"refinement_{timestamp}.png")
             refinement_image.save(refine_save_path)
 
-    # ── Meta info (Right Column) ──────────────────────────────────────────
+    # ── Meta info & Downloads ──────────────────────────────────────────
+    st.divider()
+    col_meta, col_dl = st.columns([2, 3], gap="large")
+    
     with col_meta:
-        seed_row = ""
-        if seed != 0:
-            seed_row = (
-                '<div class="param-row">'
-                '<span class="key">Base Seed</span>'
-                f'<span class="val">{base_seed}</span>'
-                "</div>"
-            )
-        mode_row = ""
-        mode_row = (
-            '<div class="param-row">'
-            '<span class="key">Mode</span>'
-            '<span class="val">Forensic (3x)</span>'
-            "</div>"
-        )
         st.markdown(
             '<div class="param-card">'
             "<h4>Parameters</h4>"
-            f"{mode_row}"
             '<div class="param-row">'
-            '<span class="key">Steps</span>'
-            f'<span class="val">{num_inference_steps}</span>'
+            '<span class="key">Mode</span>'
+            '<span class="val">Forensic V2</span>'
             "</div>"
             '<div class="param-row">'
-            '<span class="key">CFG</span>'
-            f'<span class="val">{guidance_scale}</span>'
+            '<span class="key">Edits Applied</span>'
+            f'<span class="val">{len(st.session_state.v2_edit_history) - 1}</span>'
             "</div>"
             '<div class="param-row">'
-            '<span class="key">Size</span>'
-            f'<span class="val">{width}×{height}</span>'
+            '<span class="key">Seed</span>'
+            f'<span class="val">{st.session_state.v2_selected_seed}</span>'
             "</div>"
-            f"{seed_row}"
             "</div>",
             unsafe_allow_html=True,
         )
 
-        st.markdown("<div style='margin-top:0.8rem'></div>", unsafe_allow_html=True)
-
-        for idx, img in enumerate(processed_images):
-            buf = io.BytesIO()
-            img.save(buf, format="PNG")
-            st.download_button(
-                label=f"⬇️ Download Sketch {idx+1} (PNG)",
-                data=buf.getvalue(),
-                file_name=f"skaitch_sketch_{timestamp}_v{idx+1}.png",
-                mime="image/png",
-                use_container_width=True,
-                key=f"dl_sketch_{idx}"
-            )
+    with col_dl:
+        buf_sketch = io.BytesIO()
+        main_image.save(buf_sketch, format="PNG")
+        st.download_button(
+            label="⬇️ Download Finalized Sketch (PNG)",
+            data=buf_sketch.getvalue(),
+            file_name=f"skaitch_sketch_{timestamp}_final.png",
+            mime="image/png",
+            use_container_width=True,
+            key="dl_final_sketch"
+        )
         
         if refine_success:
             st.markdown("<div style='margin-top:0.4rem'></div>", unsafe_allow_html=True)
-            buf2 = io.BytesIO()
-            refinement_image.save(buf2, format="PNG")
+            buf_refine = io.BytesIO()
+            refinement_image.save(buf_refine, format="PNG")
             st.download_button(
                 label="⬇️ Download Refinement (PNG)",
-                data=buf2.getvalue(),
+                data=buf_refine.getvalue(),
                 file_name=f"skaitch_refinement_{timestamp}.png",
                 mime="image/png",
                 use_container_width=True,
                 key="dl_refinement"
             )
 
-else:
+    # Option to start over
+    st.divider()
+    if st.button("🔄 Start New Composite", use_container_width=True, key="reset_v2"):
+        st.session_state.v2_stage = "idle"
+        st.session_state.v2_drafts = []
+        st.session_state.v2_selected_sketch = None
+        st.session_state.v2_edit_history = []
+        st.rerun()
+
+# ─── IDLE state ───────────────────────────────────────────────────────────────
+elif st.session_state.v2_stage == "idle":
     gpu_txt = torch.cuda.get_device_name(0) if torch.cuda.is_available() else "CPU"
     st.info(f"**Ready!** System is loaded with `SDXL Base 1.0`, `SDXL ControlNet`, and `CodeFormer` on **{gpu_txt}**.")
