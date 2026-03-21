@@ -18,8 +18,8 @@ def get_svg_html(svg_string: str) -> str:
     """
 
 # Default styles for two-tone paths (Stripe SaaS Light Theme)
-S_BASE = 'fill="none" stroke="rgba(28,28,30,0.6)" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"'
-S_HL = 'fill="none" stroke="rgba(245,158,11,0.85)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"'
+S_BASE = 'fill="none" stroke="rgba(28,28,30,0.95)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"'
+S_HL = 'fill="none" stroke="rgba(245,158,11,1.0)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"'
 F_EYE = 'fill="rgba(28,28,30,0.05)"'
 
 VISUAL_AIDS = {
