@@ -100,7 +100,23 @@ The transition to a unified PyTorch stack has also resolved the "Custom Operator
 
 By replacing the DeepFaceDrawing engine with the SDXL-ControlNet pipeline, Skaitch has achieved a quantum leap in both quality and maintainability. The current system provides native 1024x1024 resolution, cinematic skin synthesis, and perfect anatomical alignment. Because it is built on the standard `diffusers` and `torch` libraries, it has removed all custom JIT compilers, making the application fully portable across any standard Linux/CUDA environment. The "Dynamic Feature Synchronization" introduced in the new architecture also resolves a critical flaw in the legacy system, where descriptors like "Hair Color" had to be manually re-prompted in the second pass. The new pipeline automates this, ensuring that the "photograph" is a mathematically synchronized translation of the "sketch." This evolution has transformed Skaitch from an academic proof-of-concept into a robust, production-ready forensic tool.
 
-## 11. Conclusion, Limitations, and Strategic Outlook
+## 11. V2.1 Architectural Evolution: Overcoming Diffusion Limitations
+
+While the transition to SDXL provided immense benefits in fidelity and resolution, rigorous operational testing of the V2 iterative framework revealed two fundamental limitations inherent to latent diffusion models when applied to strict forensic morphology.
+
+### 11.1 The Hallucination Problem (Attention Bleed)
+The legacy prompt building system relied on concatenating categorical selections into a dense, comma-separated list of adjectives (e.g., `oval face, thin lips, blue eyes, strong jaw...`). It was observed that when presented with 15+ disconnected trait tokens, SDXL's dual text encoders (CLIP) suffered from severe **"attention bleed."** The model would frequently lose positional track of which adjective applied to which noun, resulting in hallucinations (e.g., generating blue hair instead of blue eyes, or inventing random accessories to fill the unguided latent space).
+
+**The Solution: Narrative Prompt Engineering**
+To resolve this, the prompt logic was entirely re-architected. Instead of isolated tokens, the system now uses a dynamic linguistic assembler to generate **coherent, grammatically correct narrative sentences** (e.g., *"A highly detailed forensic pencil sketch of a 30-year-old Caucasian male. He features an oval face structure with a remarkably strong jawline and piercing blue eyes..."*). Because SDXL is heavily heavily optimized for natural language captions, this narrative structure drastically reduced attention bleed, enforcing rigorous adherence to the investigator's selections right from the Phase I baseline.
+
+### 11.2 The Editing Problem (Global Noise vs. Structural Integrity)
+The V2 framework introduced an iterative editing loop using standard `StableDiffusionXLImg2ImgPipeline`. Operators encountered a mathematical paradox: making a **structural, geometric change** (like widening a jawline or reshaping a nose) fundamentally requires altering low-frequency spatial data. This demands a High Denoise Strength (e.g., `0.70`). However, applying `0.70` noise *globally* across the canvas destroyed the carefully preserved identity of the sketch (the eyes, hair, and layout). Conversely, restricting the strength to `0.35` preserved the identity but mathematically locked the geometry, rendering structural edit instructions completely ineffective.
+
+**The Solution: Regional Inpainting & Masking**
+The framework was upgraded from global Image-to-Image to **Regional Inpainting** (`StableDiffusionXLInpaintPipeline`). A masking UI was introduced, allowing forensic operators to physically highlight the exact structural anomaly they wish to edit (e.g., drawing a mask over the nose). This permits the system to blast the masked zone with exceptionally high noise (up to 85%), providing the mathematical freedom to completely reshape the nose based on text instructions, while leaving the unmasked 90% of the facial geometry mathematically and permanently frozen. This workflow perfectly mirrors professional digital reconstruction standards.
+
+## 12. Conclusion, Limitations, and Strategic Outlook
 
 Skaitch establishes a new benchmark for generative forensic portraiture by combining the descriptive precision of categorical inputs with the raw power of latent diffusion. The dual-phase pipeline—separating morphological sketching from photorealistic refinement—reflects a deep understanding of the forensic artist's workflow. By leveraging SDXL and ControlNet on cost-effective T4 hardware, the system demonstrates that high-fidelity AI tools can be both powerful and architecturally accessible. The integration of face restoration and automated persistence further solidifies Skaitch as a professional-grade instrument for law enforcement.
 

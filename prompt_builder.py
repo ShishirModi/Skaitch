@@ -108,95 +108,92 @@ FORENSIC_DEFAULTS = {
 # ─── Prompt Builder ──────────────────────────────────────────────────────────
 
 
+def _build_narrative(features: dict[str, str], is_photo: bool) -> list[str]:
+    """Helper to construct the grammatical narrative sentences. Correctly handles pronouns."""
+    gender = features.get("Gender", "Male").lower()
+    subject = "He" if gender == "male" else ("She" if gender == "female" else "They")
+    possessive = "His" if gender == "male" else ("Her" if gender == "female" else "Their")
+
+    age = features.get("Age range", "26–35")
+    ethnicity = features.get("Ethnicity", "")
+    skin = features.get("Skin tone", "")
+
+    # Sentence 1: The Base Noun Phrase
+    eth_str = f" {ethnicity.lower()} " if ethnicity and ethnicity != "None" else " "
+    base_noun = f"{eth_str.strip()} {gender}" if eth_str.strip() else f"{gender}"
+    sentence1 = f"of a {base_noun}, age {age}."
+    
+    # Sentence 2: Structure
+    face_shape = features.get("Face shape", "")
+    jawline = features.get("Jawline", "")
+    struct_parts = []
+    if skin and skin != "None": struct_parts.append(f"{skin.lower()} skin")
+    if face_shape and face_shape != "None": struct_parts.append(f"an {face_shape.lower()} face shape")
+    if jawline and jawline != "None": struct_parts.append(f"a {jawline.lower()} jawline")
+    
+    sentence2 = f"{subject} features " + ", ".join(struct_parts) + "." if struct_parts else ""
+
+    # Sentence 3: Eyes & Nose
+    eyes = features.get("Eyes", "")
+    eye_color = features.get("Eye color", "")
+    eyebrows = features.get("Eyebrows", "")
+    nose = features.get("Nose", "")
+    mouth = features.get("Mouth / Lips", "")
+
+    if is_photo and eye_color:
+        eyes_desc = f"({eye_color.lower()} {eyes.lower()} shaped eyes:1.4)"
+    else:
+        eyes_desc = f"{eye_color.lower()} {eyes.lower()} shaped eyes" if eye_color else f"{eyes.lower()} shaped eyes"
+        
+    sentence3 = f"{possessive} facial features include {eyes_desc} beneath {eyebrows.lower()} eyebrows, leading down to a {nose.lower()} nose and {mouth.lower()} lips."
+
+    # Sentence 4: Hair & Dynamic Extras (only appended if required)
+    hair_style = features.get("Hair style", "")
+    hair_color = features.get("Hair color", "")
+    facial_hair = features.get("Facial hair", "")
+    marks = features.get("Distinguishing marks", "")
+    glasses = features.get("Spectacles", "")
+    tint = features.get("Spectacles Tint", "")
+
+    hair_str = f"{hair_color.lower()} {hair_style.lower()} hair" if hair_color else f"{hair_style.lower()} hair"
+    if is_photo and hair_style != "Bald":
+        hair_str = f"({hair_str}:1.3)"
+        
+    hair_desc = hair_str if hair_style != "Bald" else "a bald head"
+    
+    extras = []
+    if facial_hair and facial_hair != "None": extras.append(f"a {facial_hair.lower()}")
+    if marks and marks != "None": extras.append(f"{marks.lower()}")
+    if glasses and glasses != "None":
+        tint_str = f" with {tint.lower()} lenses" if tint and tint != "None" else ""
+        glass_str = f"wearing {glasses.lower()} shaped spectacles{tint_str}"
+        if is_photo: glass_str = f"({glass_str}:1.3)"
+        extras.append(glass_str)
+        
+    sentence4 = f"{subject} has {hair_desc}"
+    if extras:
+        if len(extras) == 1:
+            sentence4 += f", and is also characterized by {extras[0]}."
+        else:
+            sentence4 += f", and is characterized by {', '.join(extras[:-1])}, and {extras[-1]}."
+    else:
+        sentence4 += "."
+
+    return [s for s in [sentence1, sentence2, sentence3, sentence4] if s]
+
+
 def build_forensic_prompt(
     features: dict[str, str],
     style: str = "Pencil sketch",
     extra_details: str = "",
 ) -> tuple[str, str]:
-    """Assemble a forensic-quality SD prompt from individual facial features.
-
-    Args:
-        features: dict mapping category name → selected option
-                  (keys should match FACIAL_FEATURES keys).
-        style: one of SKETCH_STYLES.
-        extra_details: optional free-text appended to the prompt.
-
-    Returns:
-        (prompt, negative_prompt) tuple ready for the SD pipeline.
-    """
-
-    gender = features.get("Gender", "Male")
-    age = features.get("Age range", "26–35")
-
-    # Opening phrase
-    parts = [
-        f"{style} of a {gender.lower()} face",
-        f"age {age}",
-    ]
-
-    # Face structure
-    face_shape = features.get("Face shape")
-    if face_shape:
-        parts.append(f"{face_shape.lower()} face shape")
-
-    jawline = features.get("Jawline")
-    if jawline:
-        parts.append(f"{jawline.lower()} jawline")
-
-    # Skin and Ethnicity
-    ethnicity = features.get("Ethnicity")
-    skin = features.get("Skin tone")
-    if ethnicity:
-        parts.append(f"{ethnicity.lower()} ethnicity")
-    if skin:
-        parts.append(f"{skin.lower()} skin tone")
-
-    # Eyes & brows
-    eyes = features.get("Eyes")
-    eye_color = features.get("Eye color")
-    if eye_color:
-        parts.append(f"{eye_color.lower()} eyes")
-    if eyes:
-        parts.append(f"{eyes.lower()} shaped eyes")
-
-    eyebrows = features.get("Eyebrows")
-    if eyebrows:
-        parts.append(f"{eyebrows.lower()} eyebrows")
-
-    # Nose & Mouth
-    nose = features.get("Nose")
-    if nose:
-        parts.append(f"{nose.lower()} nose")
-
-    mouth = features.get("Mouth / Lips")
-    if mouth:
-        parts.append(f"{mouth.lower()} lips")
-
-    # Hair
-    hair_style = features.get("Hair style")
-    hair_color = features.get("Hair color")
-    if hair_style and hair_style != "Bald":
-        hair_desc = f"{hair_color.lower()} {hair_style.lower()} hair" if hair_color else f"{hair_style.lower()} hair"
-        parts.append(hair_desc)
-    elif hair_style == "Bald":
-        parts.append("bald head")
-
-    # Facial hair
-    facial_hair = features.get("Facial hair")
-    if facial_hair and facial_hair != "None":
-        parts.append(facial_hair.lower())
-
-    # Distinguishing marks
-    marks = features.get("Distinguishing marks")
-    if marks and marks != "None":
-        parts.append(marks.lower())
-
-    # Spectacles
-    glasses = features.get("Spectacles")
-    tint = features.get("Spectacles Tint")
-    if glasses and glasses != "None":
-        tint_str = f" with {tint.lower()} lenses" if tint and tint != "None" else ""
-        parts.append(f"wearing {glasses.lower()} shaped spectacles{tint_str}")
+    """Assemble a forensic-quality SD prompt from individual facial features."""
+    
+    # Generate grammatical narrative
+    sentences = _build_narrative(features, is_photo=False)
+    
+    # Prefix medium
+    prompt = f"A highly detailed {style.lower()} {sentences[0]} {' '.join(sentences[1:])}"
 
     # Style tokens for quality
     quality_tokens = (
@@ -206,7 +203,7 @@ def build_forensic_prompt(
         "criminal investigation, legal evidence accuracy"
     )
 
-    prompt = ", ".join(parts) + ", " + quality_tokens
+    prompt = prompt + ", " + quality_tokens
 
     # Extra details from user
     if extra_details.strip():
@@ -214,74 +211,18 @@ def build_forensic_prompt(
 
     return prompt, FORENSIC_NEGATIVE
 
-def build_sdxl_forensic_prompt(
-    features: dict[str, str],
-    style: str = "Pencil sketch",
-    extra_details: str = "",
-) -> tuple[str, str]:
-    """Wrapper that calls build_forensic_prompt and appends SDXL boosters."""
-    prompt, neg = build_forensic_prompt(features, style, extra_details)
-    return prompt + ", best quality, masterpiece, highly detailed face", neg
 
 def build_refinement_prompt(
     features: dict[str, str],
     extra_details: str = "",
 ) -> tuple[str, str]:
-    """Assemble a high-fidelity photorealistic prompt for Phase II refinement.
+    """Assemble a high-fidelity photorealistic prompt for Phase II refinement."""
     
-    Reuses the same feature logic as build_forensic_prompt but swaps
-    sketch-specific tokens for photographic ones.
-    """
-    gender = features.get("Gender", "person")
-    age = features.get("Age range", "adult")
-
-    parts = [
-        f"Extreme close-up professional studio portrait of a {age} {gender.lower()}",
-    ]
-
-    # Re-use most of the descriptive parts
-    for cat in ["Ethnicity", "Skin tone", "Face shape", "Jawline", "Eyes", "Eyebrows", "Nose", "Mouth / Lips"]:
-        val = features.get(cat)
-        if val:
-            if cat == "Mouth / Lips":
-                parts.append(f"{val.lower()} lips")
-            elif cat == "Ethnicity":
-                parts.append(f"{val.lower()} ethnicity")
-            elif cat == "Eyes":
-                parts.append(f"{val.lower()} shaped eyes")
-            else:
-                parts.append(f"{val.lower()} {cat.lower()}")
-
-    # Chromatic Details (Weighted for Phase II)
-    eye_color = features.get("Eye color")
-    if eye_color:
-        parts.append(f"({eye_color.lower()} eyes:1.6)")
-
-    # Hair (Weighted for better adherence in Refinement)
-    hair_style = features.get("Hair style")
-    hair_color = features.get("Hair color")
-    if hair_style and hair_style != "Bald":
-        hair_desc = f"({hair_color.lower()} {hair_style.lower()} hair:1.3)" if hair_color else f"({hair_style.lower()} hair:1.3)"
-        parts.append(hair_desc)
-    elif hair_style == "Bald":
-        parts.append("(bald head:1.3)")
-
-    # Facial hair
-    facial_hair = features.get("Facial hair")
-    if facial_hair and facial_hair != "None":
-        parts.append(facial_hair.lower())
-
-    # Distinguishing marks
-    marks = features.get("Distinguishing marks")
-    if marks and marks != "None":
-        parts.append(marks.lower())
-
-    # Spectacles (Weighted for Phase II)
-    glasses = features.get("Spectacles")
-    tint = features.get("Spectacles Tint")
-    if glasses and glasses != "None":
-        tint_str = f" with {tint.lower()} lenses" if tint and tint != "None" else ""
-        parts.append(f"(wearing {glasses.lower()} shaped spectacles{tint_str}:1.3)")
+    # Generate grammatical narrative with photorealism weighting
+    sentences = _build_narrative(features, is_photo=True)
+    
+    # Prefix medium
+    prompt = f"Extreme close-up professional studio portrait {sentences[0]} {' '.join(sentences[1:])}"
 
     # Quality tokens for photorealism
     photo_tokens = (
@@ -289,15 +230,10 @@ def build_refinement_prompt(
         "cinematic lighting, masterpiece, sharp focus, professional photography, "
         "detailed eyes, detailed hair texture"
     )
-    if hair_color:
-        photo_tokens += f", {hair_color.lower()} hair color"
-    if eye_color:
-        photo_tokens += f", {eye_color.lower()} eye color"
 
-    prompt = ", ".join(parts) + ", " + photo_tokens
+    prompt = prompt + ", " + photo_tokens
 
     if extra_details.strip():
-        # Strip potential "pencil" or "sketch" references from extra_details if present
         details = extra_details.strip().lower()
         if "sketch" not in details and "pencil" not in details:
             prompt += ", " + extra_details.strip()
@@ -338,14 +274,10 @@ def build_edit_prompt(
     Returns:
         (prompt, negative_prompt) tuple for the i2i pass.
     """
-    # Fix 2: Prompt Isolation. Decrease the density of the base prompt so the
-    # i2i model isn't gravitationally bound to the exact same starting structural identity.
-    gender = features.get("Gender", "person")
-    age = features.get("Age range", "adult")
-    ethnicity = features.get("Ethnicity", "")
-    
-    # Lightweight base
-    base_prompt = f"{style} of a {ethnicity.lower()} {gender.lower()} face, age {age}"
+    # In V2.1, Regional Inpainting prevents semantic locking, so we can pass the
+    # full grammatical narrative to ensure unmasked context is perfectly understood.
+    sentences = _build_narrative(features, is_photo=False)
+    base_prompt = f"A highly detailed {style.lower()} {sentences[0]} {' '.join(sentences[1:])}"
 
     # Append the heavily weighted edit instruction
     if edit_instruction.strip():

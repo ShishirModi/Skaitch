@@ -36,14 +36,22 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-    /* ── Typography ──────────────────────────────────────────────────── */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    /* ── Typography & Base Theme ─────────────────────────────────────── */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+    /* Accent colour justification: Forensic Cyan (#06b6d4) provides a cold, 
+       clinical precision fitting for a law enforcement intelligence dashboard,
+       standing out against the Slate dark mode without feeling overly flashy. */
 
     html, body, [class*="st-"] {
         font-family: 'Inter', sans-serif;
     }
+    
+    .stApp {
+        background-color: #020617; /* Very dark slate */
+    }
 
-    /* Restore Streamlit icon fonts to prevent ligatures rendering as text */
+    /* Restore Streamlit icon fonts */
     [class*="material-symbols"],
     [data-testid*="Icon"],
     [data-testid*="stIcon"],
@@ -51,246 +59,258 @@ st.markdown(
         font-family: 'Material Symbols Rounded', sans-serif !important;
     }
 
-    /* ── Global tweaks ───────────────────────────────────────────────── */
+    /* ── Global Layout tweaks ────────────────────────────────────────── */
     .block-container {
         padding-top: 2rem;
-        padding-bottom: 2rem;
-        max-width: 1100px;
+        padding-bottom: 2.5rem;
+        max-width: 1300px;
     }
 
     /* ── Header ──────────────────────────────────────────────────────── */
     .main-header {
-        background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
-        padding: clamp(1.5rem, 5vw, 2.4rem) clamp(1.5rem, 5vw, 2.8rem);
-        border-radius: 20px;
-        margin-bottom: 1.8rem;
-        color: #fff;
-        box-shadow: 0 8px 32px rgba(48, 43, 99, 0.35);
-        position: relative;
-        overflow: hidden;
-    }
-    .main-header::before {
-        content: "";
-        position: absolute;
-        top: -40%;
-        right: -10%;
-        width: 280px;
-        height: 280px;
-        border-radius: 50%;
-        background: radial-gradient(circle, rgba(168,85,247,.25) 0%, transparent 70%);
-        pointer-events: none;
+        background: #0f172a; /* Slate 900 */
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        padding: clamp(1.2rem, 4vw, 1.8rem) clamp(1.5rem, 4vw, 2.2rem);
+        border-radius: 12px;
+        margin-bottom: 2rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
     }
     .main-header h1 {
         margin: 0;
-        font-size: clamp(1.5rem, 4vw, 2rem);
-        font-weight: 700;
+        font-size: clamp(1.4rem, 3vw, 1.8rem);
+        font-weight: 600;
         letter-spacing: -0.5px;
+        color: #f8fafc;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
     }
     .main-header p {
-        margin: 0.5rem 0 0 0;
-        opacity: 0.6;
-        font-size: clamp(0.85rem, 2.5vw, 0.95rem);
-        font-weight: 300;
-        letter-spacing: 0.2px;
+        margin: 0.4rem 0 0 0;
+        color: #94a3b8;
+        font-size: 0.95rem;
+        font-weight: 400;
+        letter-spacing: 0.3px;
     }
 
     /* ── Sidebar ─────────────────────────────────────────────────────── */
     [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #0d0d1f 0%, #161636 100%) !important;
-        border-right: 1px solid rgba(255,255,255,0.06);
+        background-color: #020617 !important;
+        border-right: 1px solid rgba(255, 255, 255, 0.06);
     }
-
-    /* section headers in sidebar */
     .sidebar-section {
         display: flex;
         align-items: center;
         gap: 0.5rem;
-        margin: 1.2rem 0 0.6rem 0;
+        margin: 1.5rem 0 0.8rem 0;
         padding-bottom: 0.4rem;
-        border-bottom: 1px solid rgba(255,255,255,0.08);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
     }
     .sidebar-section .icon {
-        font-size: 1.1rem;
+        font-size: 1rem;
+        opacity: 0.8;
     }
     .sidebar-section .label {
-        font-size: 0.75rem;
+        font-size: 0.72rem;
         font-weight: 600;
         letter-spacing: 1.2px;
         text-transform: uppercase;
-        color: rgba(224,224,255,0.55);
+        color: #94a3b8;
     }
-
-    /* sidebar title */
     .sidebar-title {
-        font-size: 1.25rem;
+        font-size: 1.3rem;
         font-weight: 700;
-        color: #e8e8ff;
-        margin-bottom: 0.2rem;
-        letter-spacing: -0.3px;
+        color: #f8fafc;
+        margin-bottom: 0.1rem;
+        letter-spacing: -0.4px;
     }
     .sidebar-subtitle {
-        font-size: 0.78rem;
-        color: rgba(200,200,255,0.4);
-        margin-bottom: 1rem;
-        font-weight: 300;
+        font-size: 0.7rem;
+        color: #06b6d4; /* Forensic Cyan */
+        margin-bottom: 1.5rem;
+        font-weight: 600;
+        font-family: 'JetBrains Mono', monospace;
+        letter-spacing: 1px;
+        text-transform: uppercase;
     }
 
-    /* ── Generate button ─────────────────────────────────────────────── */
-    .stButton > button {
-        width: 100%;
-        background: linear-gradient(135deg, #6c5ce7, #a855f7);
-        color: white;
-        border: none;
-        padding: 0.8rem 1.5rem;
-        font-size: 1rem;
+    /* ── Main Canvas Feature Cards ───────────────────────────────────── */
+    .feature-card {
+        background: #0f172a;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1.2rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+    .feature-card-title {
+        font-size: 0.75rem;
         font-weight: 600;
-        border-radius: 14px;
-        letter-spacing: 0.3px;
+        color: #06b6d4;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        margin-bottom: 1.2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        padding-bottom: 0.6rem;
+    }
+
+    /* ── Buttons ─────────────────────────────────────────────────────── */
+    .stButton > button {
+        border-radius: 8px;
+        font-weight: 500;
         transition: all 0.2s ease;
-        box-shadow: 0 4px 16px rgba(108, 92, 231, 0.25);
+        padding: 0.6rem 1rem;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: #1e293b;
+        color: #e2e8f0;
     }
     .stButton > button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 24px rgba(108, 92, 231, 0.45);
-        background: linear-gradient(135deg, #7c6cf7, #b865ff);
+        background: #334155;
+        border-color: rgba(255, 255, 255, 0.2);
+        color: #f8fafc;
     }
-    .stButton > button:active {
-        transform: translateY(0);
+    /* Primary Action Buttons */
+    div[data-testid="stButton"] button[kind="primary"] {
+        background: #06b6d4 !important;
+        color: #082f49 !important; /* Cyan 900 text */
+        border: none !important;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        box-shadow: 0 4px 14px rgba(6, 182, 212, 0.2) !important;
+    }
+    div[data-testid="stButton"] button[kind="primary"]:hover {
+        background: #0891b2 !important;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(6, 182, 212, 0.3) !important;
     }
 
-    /* ── Parameter chip cards ────────────────────────────────────────── */
+    /* ── Variant Cards (Sketch Output) ───────────────────────────────── */
+    .variant-card {
+        background: #0f172a;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        padding: 1.2rem;
+        margin-bottom: 1.5rem;
+        box-shadow: inset 0 2px 10px rgba(0,0,0,0.2), 0 4px 15px rgba(0,0,0,0.3);
+        transition: border-color 0.2s ease;
+    }
+    .variant-card:hover {
+        border-color: rgba(6, 182, 212, 0.4);
+    }
+
+    /* ── Parameter Chips / Metadata Table ────────────────────────────── */
     .param-card {
-        background: rgba(255,255,255,0.04);
-        border: 1px solid rgba(255,255,255,0.08);
-        border-radius: 14px;
-        padding: 1.2rem 1.4rem;
-        backdrop-filter: blur(8px);
+        background: #0f172a;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 8px;
+        padding: 1rem 1.2rem;
     }
     .param-card h4 {
         margin: 0 0 0.8rem 0;
-        font-size: 0.85rem;
+        font-size: 0.72rem;
         font-weight: 600;
-        color: #a78bfa;
+        color: #94a3b8;
         text-transform: uppercase;
-        letter-spacing: 1px;
+        letter-spacing: 1.2px;
     }
     .param-row {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 0.35rem 0;
-        border-bottom: 1px solid rgba(255,255,255,0.04);
-        font-size: 0.88rem;
+        padding: 0.4rem 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.82rem;
     }
     .param-row:last-child { border-bottom: none; }
     .param-row .key {
-        color: rgba(255,255,255,0.5);
-        font-weight: 400;
+        color: #64748b;
     }
     .param-row .val {
-        color: #e8e8ff;
-        font-weight: 600;
+        color: #06b6d4;
+        font-weight: 500;
     }
 
-    /* ── Prompt preview ─────────────────────────────────────────────── */
+    /* ── Prompt preview ──────────────────────────────────────────────── */
     .prompt-preview {
-        background: rgba(255,255,255,0.04);
-        border: 1px solid rgba(255,255,255,0.08);
-        border-radius: 10px;
-        padding: 0.8rem 1rem;
+        background: #020617;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 8px;
+        padding: 1rem;
         font-size: 0.82rem;
-        color: rgba(200,200,255,0.7);
-        line-height: 1.55;
+        color: #94a3b8;
+        line-height: 1.6;
         margin-top: 0.5rem;
-        max-height: 140px;
+        max-height: 120px;
         overflow-y: auto;
-        word-break: break-word;
+        font-family: 'JetBrains Mono', monospace;
     }
     .prompt-preview-label {
         font-size: 0.7rem;
         font-weight: 600;
         text-transform: uppercase;
-        letter-spacing: 1px;
-        color: rgba(167,139,250,0.7);
-        margin-top: 0.8rem;
-        margin-bottom: 0.2rem;
-    }
-
-    /* ── Empty-state hero ────────────────────────────────────────────── */
-    .empty-hero {
-        text-align: center;
-        padding: 5rem 2rem;
-        color: rgba(255,255,255,0.45);
-    }
-    .empty-hero .icon {
-        font-size: 3.5rem;
-        margin-bottom: 1rem;
-        opacity: 0.5;
-    }
-    .empty-hero h3 {
-        font-size: 1.3rem;
-        font-weight: 600;
-        color: rgba(255,255,255,0.65);
-        margin: 0 0 0.4rem 0;
-    }
-    .empty-hero p {
-        font-size: 0.92rem;
-        max-width: 380px;
-        margin: 0 auto;
-        line-height: 1.6;
+        letter-spacing: 1.2px;
+        color: #64748b;
+        margin-top: 1rem;
+        margin-bottom: 0.4rem;
     }
 
     /* ── Success banner ──────────────────────────────────────────────── */
     .success-banner {
-        background: linear-gradient(135deg, rgba(16,185,129,0.12), rgba(52,211,153,0.08));
-        border: 1px solid rgba(16,185,129,0.2);
-        border-radius: 12px;
+        background: rgba(6, 182, 212, 0.05);
+        border: 1px solid rgba(6, 182, 212, 0.2);
+        border-radius: 8px;
         padding: 0.8rem 1.2rem;
         display: flex;
         align-items: center;
-        gap: 0.6rem;
-        margin-bottom: 1.2rem;
+        gap: 0.8rem;
+        margin-bottom: 1.5rem;
     }
     .success-banner .dot {
         width: 8px; height: 8px;
         border-radius: 50%;
-        background: #10b981;
+        background: #06b6d4;
         flex-shrink: 0;
+        box-shadow: 0 0 8px rgba(6, 182, 212, 0.6);
     }
     .success-banner span {
-        color: #6ee7b7;
+        color: #e2e8f0;
         font-size: 0.88rem;
         font-weight: 500;
+        letter-spacing: 0.3px;
+    }
+
+    /* ── Image container ─────────────────────────────────────────────── */
+    .stImage img {
+        border-radius: 8px;
+        border: 1px solid rgba(255,255,255,0.05);
+    }
+    
+    /* Phase II Featured Image */
+    .featured-output img {
+        border-radius: 12px;
+        border: 1px solid rgba(6, 182, 212, 0.3);
+        box-shadow: 0 8px 30px rgba(0,0,0,0.4);
     }
 
     /* ── Download button override ─────────────────────────────────────── */
     .stDownloadButton > button {
-        width: 100%;
-        background: rgba(255,255,255,0.06);
-        color: #c4b5fd;
-        border: 1px solid rgba(196,181,253,0.2);
-        padding: 0.7rem 1.2rem;
-        font-size: 0.9rem;
-        font-weight: 500;
-        border-radius: 12px;
+        background: transparent;
+        color: #06b6d4;
+        border: 1px solid rgba(6, 182, 212, 0.3);
+        border-radius: 8px;
         transition: all 0.2s ease;
     }
     .stDownloadButton > button:hover {
-        background: rgba(196,181,253,0.12);
-        border-color: rgba(196,181,253,0.35);
-        color: #e2d9fe;
+        background: rgba(6, 182, 212, 0.08);
+        border-color: rgba(6, 182, 212, 0.5);
+        color: #22d3ee;
     }
 
-    /* ── Image container ─────────────────────────────────────────────── */
-    .stImage {
-        border-radius: 16px;
-        overflow: hidden;
-    }
-    .stImage img {
-        border-radius: 16px;
-    }
-
-    /* ── Hide default Streamlit branding ─────────────────────────────── */
+    /* ── Hide Streamlit branding ─────────────────────────────────────── */
     #MainMenu { visibility: hidden; }
     footer { visibility: hidden; }
     header { visibility: hidden; }
@@ -411,176 +431,6 @@ with st.sidebar:
                 st.rerun()
 
     
-    # ── Section: Facial Features ───────────────────────────────────────
-    st.markdown(
-        '<div class="sidebar-section">'
-        '<span class="icon">👤</span>'
-        '<span class="label">Facial Features</span>'
-        "</div>",
-        unsafe_allow_html=True,
-    )
-
-    selected_features: dict[str, str] = {}
-
-    # Layout: Gender + Age side-by-side
-    col_g, col_a = st.columns(2)
-    with col_g:
-        selected_features["Gender"] = st.selectbox(
-            "Gender", FACIAL_FEATURES["Gender"]
-        )
-    with col_a:
-        selected_features["Age range"] = st.selectbox(
-            "Age range", FACIAL_FEATURES["Age range"], index=1
-        )
-    # Ethnicity + Skin Tone row
-    col_eth, col_st = st.columns(2)
-    with col_eth:
-        selected_features["Ethnicity"] = st.selectbox(
-            "Ethnicity", FACIAL_FEATURES["Ethnicity"], index=0
-        )
-    with col_st:
-        selected_features["Skin tone"] = st.selectbox(
-            "Skin tone", FACIAL_FEATURES["Skin tone"], index=2
-        )
-
-    # Face structure row
-    col_fs, col_jl = st.columns(2)
-    with col_fs:
-        feature_val = st.selectbox("Face shape", FACIAL_FEATURES["Face shape"])
-        selected_features["Face shape"] = feature_val
-        st.markdown(get_svg_html(VISUAL_AIDS["Face shape"][feature_val]), unsafe_allow_html=True)
-        
-    with col_jl:
-        feature_val = st.selectbox("Jawline", FACIAL_FEATURES["Jawline"])
-        selected_features["Jawline"] = feature_val
-        st.markdown(get_svg_html(VISUAL_AIDS["Jawline"][feature_val]), unsafe_allow_html=True)
-
-    # Eyes + Brows row
-    col_e, col_eb = st.columns(2)
-    with col_e:
-        feature_val = st.selectbox("Eyes shape", FACIAL_FEATURES["Eyes"])
-        selected_features["Eyes"] = feature_val
-        st.markdown(get_svg_html(VISUAL_AIDS["Eyes"][feature_val]), unsafe_allow_html=True)
-
-    with col_eb:
-        selected_features["Eye color"] = st.selectbox(
-            "Eye color", FACIAL_FEATURES["Eye color"], index=0
-        )
-
-    # Eyebrows row
-    selected_features["Eyebrows"] = st.selectbox(
-        "Eyebrows", FACIAL_FEATURES["Eyebrows"]
-    )
-
-    # Nose + Mouth row
-    col_n, col_m = st.columns(2)
-    with col_n:
-        feature_val = st.selectbox("Nose", FACIAL_FEATURES["Nose"])
-        selected_features["Nose"] = feature_val
-        st.markdown(get_svg_html(VISUAL_AIDS["Nose"][feature_val]), unsafe_allow_html=True)
-        
-    with col_m:
-        selected_features["Mouth / Lips"] = st.selectbox(
-            "Mouth / Lips", FACIAL_FEATURES["Mouth / Lips"]
-        )
-
-    # (Skin tone removed from here, moved up to Ethnicity row)
-
-    # ── Section: Hair ──────────────────────────────────────────────────
-    st.markdown(
-        '<div class="sidebar-section">'
-        '<span class="icon">💇</span>'
-        '<span class="label">Hair</span>'
-        "</div>",
-        unsafe_allow_html=True,
-    )
-
-    col_hs, col_hc = st.columns(2)
-    with col_hs:
-        selected_features["Hair style"] = st.selectbox(
-            "Hair style", FACIAL_FEATURES["Hair style"]
-        )
-    with col_hc:
-        selected_features["Hair color"] = st.selectbox(
-            "Hair color", FACIAL_FEATURES["Hair color"]
-        )
-
-    selected_features["Facial hair"] = st.selectbox(
-        "Facial hair", FACIAL_FEATURES["Facial hair"]
-    )
-
-    # ── Section: Accessories ──────────────────────────────────────────
-    st.markdown(
-        '<div class="sidebar-section">'
-        '<span class="icon">👓</span>'
-        '<span class="label">Accessories</span>'
-        "</div>",
-        unsafe_allow_html=True,
-    )
-
-    col_sp, col_ti = st.columns(2)
-    with col_sp:
-        selected_features["Spectacles"] = st.selectbox(
-            "Spectacles shape", FACIAL_FEATURES["Spectacles"]
-        )
-    with col_ti:
-        selected_features["Spectacles Tint"] = st.selectbox(
-            "Spectacles tint", FACIAL_FEATURES["Spectacles Tint"]
-        )
-
-    # ── Section: Distinguishing Marks ──────────────────────────────────
-    st.markdown(
-        '<div class="sidebar-section">'
-        '<span class="icon">🔖</span>'
-        '<span class="label">Distinguishing Marks</span>'
-        "</div>",
-        unsafe_allow_html=True,
-    )
-
-    selected_features["Distinguishing marks"] = st.selectbox(
-        "Distinguishing marks",
-        FACIAL_FEATURES["Distinguishing marks"],
-        label_visibility="collapsed",
-    )
-
-    # ── Sketch style ──────────────────────────────────────────────────
-    st.markdown(
-        '<div class="sidebar-section">'
-        '<span class="icon">🖊️</span>'
-        '<span class="label">Sketch Style</span>'
-        "</div>",
-        unsafe_allow_html=True,
-    )
-
-    sketch_style = st.selectbox(
-        "Sketch style", SKETCH_STYLES, label_visibility="collapsed"
-    )
-
-    extra_details = st.text_input(
-        "Additional details",
-        placeholder="e.g. wearing glasses, prominent ears …",
-        help="Free-text appended to the generated prompt.",
-    )
-
-    # Build prompt
-    prompt, negative_prompt = build_sdxl_forensic_prompt(
-        selected_features, sketch_style, extra_details
-    )
-
-    # Show prompt preview
-    st.markdown(
-        '<div class="prompt-preview-label">Generated prompt</div>',
-        unsafe_allow_html=True,
-    )
-    st.markdown(
-        f'<div class="prompt-preview">{prompt}</div>',
-        unsafe_allow_html=True,
-    )
-
-    # Use forensic defaults
-    default_steps = 40
-    default_cfg = 12.0
-
     # ── Section: Parameters ────────────────────────────────────────────────
     st.markdown(
         '<div class="sidebar-section">'
@@ -589,6 +439,9 @@ with st.sidebar:
         "</div>",
         unsafe_allow_html=True,
     )
+
+    default_steps = 40
+    default_cfg = 12.0
 
     num_inference_steps = st.slider(
         "Inference steps",
@@ -632,7 +485,94 @@ with st.sidebar:
 
     # ── Generate ───────────────────────────────────────────────────────────
     st.markdown("<div style='margin-top:1.5rem'></div>", unsafe_allow_html=True)
-    generate = st.button("🚀  Generate", use_container_width=True)
+    generate = st.button("🚀  Generate", use_container_width=True, type="primary")
+
+# ─── Main Canvas Features ──────────────────────────────────────────────────────
+selected_features: dict[str, str] = {}
+
+# 1. Core Identity & Structure
+with st.container(border=True):
+    st.markdown('<div class="feature-card-title">👤 Face Structure & Identity</div>', unsafe_allow_html=True)
+    col_g, col_a, col_eth, col_st = st.columns(4)
+    with col_g: selected_features["Gender"] = st.selectbox("Gender", FACIAL_FEATURES["Gender"])
+    with col_a: selected_features["Age range"] = st.selectbox("Age range", FACIAL_FEATURES["Age range"], index=1)
+    with col_eth: selected_features["Ethnicity"] = st.selectbox("Ethnicity", FACIAL_FEATURES["Ethnicity"], index=0)
+    with col_st: selected_features["Skin tone"] = st.selectbox("Skin tone", FACIAL_FEATURES["Skin tone"], index=2)
+    
+    st.markdown("<br>", unsafe_allow_html=True)
+    col_fs, col_jl = st.columns(2)
+    with col_fs:
+        feature_val = st.selectbox("Face shape", FACIAL_FEATURES["Face shape"])
+        selected_features["Face shape"] = feature_val
+        st.markdown(get_svg_html(VISUAL_AIDS["Face shape"][feature_val]), unsafe_allow_html=True)
+    with col_jl:
+        feature_val = st.selectbox("Jawline", FACIAL_FEATURES["Jawline"])
+        selected_features["Jawline"] = feature_val
+        st.markdown(get_svg_html(VISUAL_AIDS["Jawline"][feature_val]), unsafe_allow_html=True)
+
+# 2. Eyes & Brows
+with st.container(border=True):
+    st.markdown('<div class="feature-card-title">👁️ Eyes & Brows</div>', unsafe_allow_html=True)
+    col_e, col_eb, col_eyebrows = st.columns(3)
+    with col_e:
+        feature_val = st.selectbox("Eyes shape", FACIAL_FEATURES["Eyes"])
+        selected_features["Eyes"] = feature_val
+        st.markdown(get_svg_html(VISUAL_AIDS["Eyes"][feature_val]), unsafe_allow_html=True)
+    with col_eb:
+        selected_features["Eye color"] = st.selectbox("Eye color", FACIAL_FEATURES["Eye color"], index=0)
+    with col_eyebrows:
+        selected_features["Eyebrows"] = st.selectbox("Eyebrows", FACIAL_FEATURES["Eyebrows"])
+
+# 3. Nose & Mouth
+with st.container(border=True):
+    st.markdown('<div class="feature-card-title">👃 Nose & Mouth</div>', unsafe_allow_html=True)
+    col_n, col_m = st.columns(2)
+    with col_n:
+        feature_val = st.selectbox("Nose", FACIAL_FEATURES["Nose"])
+        selected_features["Nose"] = feature_val
+        st.markdown(get_svg_html(VISUAL_AIDS["Nose"][feature_val]), unsafe_allow_html=True)
+    with col_m:
+        selected_features["Mouth / Lips"] = st.selectbox("Mouth / Lips", FACIAL_FEATURES["Mouth / Lips"])
+
+# 4. Hair & Accessories
+with st.container(border=True):
+    st.markdown('<div class="feature-card-title">💇 Hair & Accessories</div>', unsafe_allow_html=True)
+    col_hs, col_hc, col_fh = st.columns(3)
+    with col_hs: selected_features["Hair style"] = st.selectbox("Hair style", FACIAL_FEATURES["Hair style"])
+    with col_hc: selected_features["Hair color"] = st.selectbox("Hair color", FACIAL_FEATURES["Hair color"])
+    with col_fh: selected_features["Facial hair"] = st.selectbox("Facial hair", FACIAL_FEATURES["Facial hair"])
+    
+    st.markdown("<br>", unsafe_allow_html=True)
+    col_sp, col_ti = st.columns(2)
+    with col_sp: selected_features["Spectacles"] = st.selectbox("Spectacles shape", FACIAL_FEATURES["Spectacles"])
+    with col_ti: selected_features["Spectacles Tint"] = st.selectbox("Spectacles tint", FACIAL_FEATURES["Spectacles Tint"])
+
+# 5. Distinguishing Marks & Style
+with st.container(border=True):
+    st.markdown('<div class="feature-card-title">🔖 Identity Marks & Sketch Style</div>', unsafe_allow_html=True)
+    selected_features["Distinguishing marks"] = st.selectbox(
+        "Distinguishing marks",
+        FACIAL_FEATURES["Distinguishing marks"],
+        label_visibility="collapsed",
+    )
+    col_ss, col_ed = st.columns([1, 2])
+    with col_ss:
+        sketch_style = st.selectbox("Sketch style", SKETCH_STYLES)
+    with col_ed:
+        extra_details = st.text_input(
+            "Additional details",
+            placeholder="e.g. wearing glasses, prominent ears …",
+            help="Free-text appended to the generated prompt."
+        )
+    
+    # Build prompt
+    prompt, negative_prompt = build_sdxl_forensic_prompt(
+        selected_features, sketch_style, extra_details
+    )
+
+    # Show prompt preview
+    st.markdown('<div class="prompt-preview-label">Generated Prompt Preview</div>', unsafe_allow_html=True)
+    st.markdown(f'<div class="prompt-preview">{prompt}</div>', unsafe_allow_html=True)
 
 # ─── V2 Session State Initialization ──────────────────────────────────────────
 if "v2_stage" not in st.session_state:
@@ -711,17 +651,39 @@ if st.session_state.v2_stage == "drafting" and st.session_state.v2_drafts:
     )
 
     st.markdown("#### 🖌️ Phase I: Sketch Variants (Select one to edit)")
-    cols = st.columns(3, gap="medium")
-    for idx, (img, col) in enumerate(zip(st.session_state.v2_drafts, cols)):
-        with col:
+    
+    for idx, img in enumerate(st.session_state.v2_drafts):
+        st.markdown('<div class="variant-card">', unsafe_allow_html=True)
+        col_img, col_actions = st.columns([2, 1], gap="large")
+        
+        with col_img:
             st.image(img, use_container_width=True)
-            st.caption(f"*Variation {idx+1}  ·  Seed {st.session_state.v2_draft_seeds[idx]}*")
-            if st.button(f"✅ Select Variation {idx+1}", key=f"select_v_{idx}", use_container_width=True):
+            
+        with col_actions:
+            st.markdown(f"<h3 style='margin-bottom:0.2rem;color:#e2e8f0;'>Variation {idx+1}</h3>", unsafe_allow_html=True)
+            st.markdown("<span style='color:#64748b;font-family:\"JetBrains Mono\", monospace;font-size:0.85rem;'>Seed: <span style='color:#06b6d4;'>{}</span></span>".format(st.session_state.v2_draft_seeds[idx]), unsafe_allow_html=True)
+            
+            st.markdown("<br><br>", unsafe_allow_html=True)
+            if st.button(f"✅ Select Variation {idx+1}", key=f"select_v_{idx}", use_container_width=True, type="primary"):
                 st.session_state.v2_stage = "editing"
                 st.session_state.v2_selected_sketch = img
                 st.session_state.v2_selected_seed = st.session_state.v2_draft_seeds[idx]
                 st.session_state.v2_edit_history = [img]  # Initial history
                 st.rerun()
+            
+            # Inline Download Button
+            import io
+            buf = io.BytesIO()
+            img.save(buf, format="PNG")
+            st.download_button(
+                label="⬇️ Download Variant",
+                data=buf.getvalue(),
+                file_name=f"skaitch_variant_{idx+1}_{st.session_state.v2_draft_seeds[idx]}.png",
+                mime="image/png",
+                key=f"dl_v_{idx}",
+                use_container_width=True
+            )
+        st.markdown('</div>', unsafe_allow_html=True)
 
 # ─── STATE 2: EDITING — Iterative sketch refinement loop ─────────────────────
 elif st.session_state.v2_stage == "editing" and st.session_state.v2_selected_sketch is not None:
@@ -735,13 +697,13 @@ elif st.session_state.v2_stage == "editing" and st.session_state.v2_selected_ske
 
     st.markdown("#### ✏️ Phase I: Iterative Sketch Refinement")
 
-    # Show current sketch
+    # Show current sketch with Inpainting Canvas overlay
+    from streamlit_drawable_canvas import st_canvas
+    import numpy as np
+    from PIL import Image
+
     col_sketch, col_controls = st.columns([3, 2], gap="large")
     
-    with col_sketch:
-        st.image(st.session_state.v2_selected_sketch, use_container_width=True)
-        st.caption(f"*Current Sketch  ·  {len(st.session_state.v2_edit_history)} version(s)*")
-
     with col_controls:
         st.markdown(
             '<div class="param-card">'
@@ -750,20 +712,23 @@ elif st.session_state.v2_stage == "editing" and st.session_state.v2_selected_ske
             unsafe_allow_html=True,
         )
         
+        # Brush size controls the mask stroke width
+        brush_size = st.slider("Brush Size", 10, 150, 40, key="brush_slider")
+        
         edit_instruction = st.text_input(
             "What would you like to change?",
-            placeholder="e.g. make the nose more pointed, widen the jaw …",
-            help="Describe the edit. This is combined with the original features.",
+            placeholder="e.g. make the nose more pointed …",
+            help="Describe the structural edit. Draw a mask specifically over this area to the left.",
             key="edit_input",
         )
 
         edit_strength = st.slider(
-            "Edit Strength",
-            min_value=0.15,
-            max_value=0.60,
-            value=0.35,
+            "Inpaint Denoise Strength",
+            min_value=0.50, # Inpainting requires high noise to reshape geometry
+            max_value=1.00,
+            value=0.85,
             step=0.05,
-            help="Low = subtle nudge, High = significant change. Default: 0.35",
+            help="At 0.85, SDXL has enough freedom to restructure the masked area entirely.",
             key="edit_strength",
         )
 
@@ -782,42 +747,78 @@ elif st.session_state.v2_stage == "editing" and st.session_state.v2_selected_ske
         with col_back:
             go_back = st.button("← Back to Drafts", use_container_width=True, key="back_to_drafts")
 
+    with col_sketch:
+        st.markdown("<h4 style='color:#e2e8f0;font-weight:600;'>🖌️ Paint the area to edit</h4>", unsafe_allow_html=True)
+        
+        bg_image = st.session_state.v2_selected_sketch
+        
+        # We need a stable display width so the canvas fits in the column,
+        # but the actual image behind it is 1024x1024.
+        display_width = 800
+        aspect_ratio = bg_image.height / bg_image.width
+        display_height = int(display_width * aspect_ratio)
+
+        canvas_result = st_canvas(
+            fill_color="rgba(255, 255, 255, 1)",  # Pure white filling
+            stroke_width=brush_size,
+            stroke_color="#FFFFFF",
+            background_image=bg_image,
+            update_streamlit=True,
+            height=display_height,
+            width=display_width,
+            drawing_mode="freedraw",
+            key="mask_canvas",
+        )
+        st.caption(f"*Masking Canvas  ·  {len(st.session_state.v2_edit_history)} version(s)*")
+
+
     # Handle edit apply
     if apply_edit and edit_instruction.strip():
-        pipe = load_pipeline()
+        # Extact Mask
+        mask_pil = None
+        has_mask = False
         
-        from prompt_builder import build_edit_prompt
-        from sketch_refiner import run_sketch_edit
+        if canvas_result.image_data is not None:
+            # image_data is numpy array (H, W, 4). Alpha channel is at index 3.
+            mask_array = canvas_result.image_data[:, :, 3]
+            # Check if any pixels were actually drawn
+            if np.any(mask_array > 0):
+                has_mask = True
+                # Convert to strict 0/255 mask.
+                mask_binary = (mask_array > 0).astype(np.uint8) * 255
+                mask_pil = Image.fromarray(mask_binary).convert("L")
+                # Resize mask to original sketch resolution (e.g., 1024x1024)
+                mask_pil = mask_pil.resize(st.session_state.v2_selected_sketch.size, Image.Resampling.LANCZOS)
         
-        edit_prompt, edit_neg = build_edit_prompt(
-            st.session_state.v2_features_snapshot,
-            edit_instruction,
-            st.session_state.v2_sketch_style,
-        )
-        
-        with st.spinner("🖌️ Applying edit …"):
-            edited_sketch = run_sketch_edit(
-                pipe=pipe,
-                sketch_pil=st.session_state.v2_selected_sketch,
-                edit_prompt=edit_prompt,
-                negative_prompt=edit_neg,
-                strength=edit_strength,
+        if not has_mask:
+            st.error("⚠️ Please draw a mask on the image to specify where the edit should occur.")
+        else:
+            pipe = load_pipeline()
+            from prompt_builder import build_edit_prompt
+            from sketch_refiner import run_sketch_edit
+            
+            edit_prompt, edit_neg = build_edit_prompt(
+                st.session_state.v2_features_snapshot,
+                edit_instruction,
+                st.session_state.v2_sketch_style,
             )
             
-            # Fix 3: Bypass CodeFormer cleanup after iterative edits.
-            # CodeFormer has a strong identity-preservation bias that forcefully reverts
-            # subtle geometric edits back to the "average" face structure. We want 
-            # to preserve the raw edits made directly by SDXL.
-            # edited_sketch = run_codeformer(edited_sketch)
+            with st.spinner(f"🖌️ Applying masked inpaint edit (Strength: {edit_strength}) …"):
+                edited_sketch = run_sketch_edit(
+                    pipe=pipe,
+                    sketch_pil=st.session_state.v2_selected_sketch,
+                    mask_pil=mask_pil,
+                    edit_prompt=edit_prompt,
+                    negative_prompt=edit_neg,
+                    strength=edit_strength,
+                )
+                
+                # Fix 4: Force UI Cache Busting
+                edited_sketch = edited_sketch.copy()
             
-            # Fix 4: Force UI Cache Busting
-            # Streamlit aggressively caches st.image based on object ID/hash. Create a 
-            # shallow copy to guarantee a new object pointer in memory.
-            edited_sketch = edited_sketch.copy()
-        
-        st.session_state.v2_edit_history.append(edited_sketch)
-        st.session_state.v2_selected_sketch = edited_sketch
-        st.rerun()
+            st.session_state.v2_edit_history.append(edited_sketch)
+            st.session_state.v2_selected_sketch = edited_sketch
+            st.rerun()
 
     # Handle undo
     if undo_edit and can_undo:
@@ -851,15 +852,15 @@ elif st.session_state.v2_stage == "rendering" and st.session_state.v2_selected_s
     features_snap = st.session_state.v2_features_snapshot
     extra_snap = st.session_state.v2_extra_details
 
-    col_sketch_final, col_photo = st.columns(2, gap="large")
+    col_sketch_final, col_photo = st.columns([2, 3], gap="large")
 
     with col_sketch_final:
-        st.markdown("#### 🖌️ Finalized Sketch")
+        st.markdown("<h4 style='color:#94a3b8;font-weight:600;'>🖌️ Finalized Sketch</h4>", unsafe_allow_html=True)
         st.image(main_image, use_container_width=True)
         st.caption(f"*Seed {st.session_state.v2_selected_seed}  ·  {len(st.session_state.v2_edit_history)} edit(s)*")
 
     with col_photo:
-        st.markdown("#### 📸 Photorealistic Refinement")
+        st.markdown("<h4 style='color:#06b6d4;font-weight:700;'>📸 Photorealistic Phase II Refinement</h4>", unsafe_allow_html=True)
         with st.spinner("🤖 SDXL-ControlNet Refinement — Generating Photorealistic Output …"):
             # Clear VRAM before Phase II to ensure maximum headroom
             if torch.cuda.is_available():
@@ -874,8 +875,10 @@ elif st.session_state.v2_stage == "rendering" and st.session_state.v2_selected_s
                 refine_success = False
 
         if refine_success:
+            st.markdown('<div class="featured-output">', unsafe_allow_html=True)
             st.image(refinement_image, use_container_width=True)
-            st.caption("*SDXL-ControlNet Refinement*")
+            st.markdown('</div>', unsafe_allow_html=True)
+            st.caption("*✨ SDXL-ControlNet High-Resolution Refinement ✨*")
         else:
             st.error(f"Refinement failed: {refine_error}\n\nEnsure that the ControlNet weights are correctly downloaded to the NVMe storage.")
 

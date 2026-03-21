@@ -4,25 +4,25 @@
 
 import torch
 from PIL import Image
-from diffusers import StableDiffusionXLImg2ImgPipeline
-
+from diffusers import StableDiffusionXLInpaintPipeline
 
 def run_sketch_edit(
     pipe,
     sketch_pil: Image.Image,
+    mask_pil: Image.Image,
     edit_prompt: str,
     negative_prompt: str,
-    strength: float = 0.35,
+    strength: float = 0.85, # Increased default to 0.85 for effective structural edits within the mask
     guidance_scale: float = 10.0,
     num_inference_steps: int = 50, # Boosted to guarantee min steps
 ) -> Image.Image:
-    """Apply a targeted edit to an existing sketch using SDXL Image-to-Image."""
+    """Apply a targeted edit to an existing sketch using SDXL Regional Inpainting."""
     
     # Fix 1: Manual Component Instantiation to bypass from_pipe hook conflicts
     # We do NOT call enable_model_cpu_offload() here because the underlying
     # PyTorch modules (pipe.unet, pipe.vae, etc.) ALREADY have hooks attached 
     # to them from the parent app.py pipeline.
-    i2i_pipe = StableDiffusionXLImg2ImgPipeline(
+    i2i_pipe = StableDiffusionXLInpaintPipeline(
         vae=pipe.vae,
         text_encoder=pipe.text_encoder,
         text_encoder_2=pipe.text_encoder_2,
@@ -32,17 +32,19 @@ def run_sketch_edit(
         scheduler=pipe.scheduler,
     )
 
-    # Ensure sketch is RGB and at the correct resolution
+    # Ensure sketch and mask are RGB and at the correct resolution
     sketch_pil = sketch_pil.convert("RGB")
+    mask_pil = mask_pil.convert("RGB")
 
     # Clear any fragmented VRAM before the i2i pass
     if torch.cuda.is_available():
         torch.cuda.empty_cache()
 
-    # Run the i2i pass
+    # Run the inpaint pass
     result = i2i_pipe(
         prompt=edit_prompt,
         image=sketch_pil,
+        mask_image=mask_pil,
         negative_prompt=negative_prompt,
         strength=strength,
         guidance_scale=guidance_scale,

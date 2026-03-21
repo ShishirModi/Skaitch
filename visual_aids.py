@@ -7,61 +7,59 @@ def get_svg_html(svg_string: str) -> str:
     """Wraps an SVG string in an HTML div for Streamlit."""
     return f"""
     <div style="display: flex; justify-content: center; align-items: center; 
-                background: rgba(255,255,255,0.05); border-radius: 8px; 
-                padding: 10px; margin-top: 5px; margin-bottom: 15px; 
-                height: auto; min-height: 60px; max-height: 80px; width: 100%;">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%" style="max-width: 60px; max-height: 60px;">
+                background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); 
+                border-radius: 6px; padding: 10px; margin-top: 4px; margin-bottom: 12px; 
+                height: auto; min-height: 70px; max-height: 90px; width: 100%;">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%" style="max-width: 65px; max-height: 65px;">
             {svg_string}
         </svg>
     </div>
     """
 
-# Default styles for paths
-S_FACE = 'fill="none" stroke="#a78bfa" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"'
-S_EYE = 'fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round"'
-S_NOSE = 'fill="none" stroke="#a78bfa" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"'
-S_JAW = 'fill="none" stroke="#a78bfa" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"'
+# Default styles for two-tone paths (Cyan/Slate Forensic Theme)
+S_BASE = 'fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"'
+S_HL = 'fill="none" stroke="#06b6d4" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"'
 
 VISUAL_AIDS = {
     "Face shape": {
-        "Oval": f'<ellipse cx="50" cy="50" rx="35" ry="45" {S_FACE} />',
-        "Round": f'<circle cx="50" cy="50" r="40" {S_FACE} />',
-        "Square": f'<rect x="15" y="15" width="70" height="70" rx="10" {S_FACE} />',
-        "Heart": f'<path d="M 50 85 C 50 85, 10 50, 15 25 C 20 10, 40 10, 50 25 C 60 10, 80 10, 85 25 C 90 50, 50 85, 50 85 Z" {S_FACE} />',
-        "Oblong": f'<rect x="20" y="5" width="60" height="90" rx="30" {S_FACE} />',
-        "Diamond": f'<path d="M 50 5 L 85 50 L 50 95 L 15 50 Z" {S_FACE} />',
-        "Triangle": f'<path d="M 50 15 L 85 85 L 15 85 Z" {S_FACE} />',
-        "Pear": f'<path d="M 50 10 C 30 10, 20 40, 15 70 C 10 90, 90 90, 85 70 C 80 40, 70 10, 50 10 Z" {S_FACE} />',
+        "Oval": f'<ellipse cx="50" cy="50" rx="35" ry="45" {S_BASE} /><path d="M 17 65 Q 50 100 83 65" {S_HL} />',
+        "Round": f'<circle cx="50" cy="50" r="40" {S_BASE} /><path d="M 15 70 Q 50 100 85 70" {S_HL} />',
+        "Square": f'<rect x="20" y="20" width="60" height="60" rx="15" {S_BASE} /><path d="M 20 55 L 20 65 Q 20 80 35 80 L 65 80 Q 80 80 80 65 L 80 55" {S_HL} />',
+        "Heart": f'<path d="M 50 85 C 50 85, 10 50, 15 25 C 20 10, 40 10, 50 25 C 60 10, 80 10, 85 25 C 90 50, 50 85, 50 85 Z" {S_BASE} /><path d="M 18 55 Q 50 90 82 55" {S_HL} />',
+        "Oblong": f'<rect x="25" y="10" width="50" height="80" rx="25" {S_BASE} /><path d="M 25 65 Q 50 100 75 65" {S_HL} />',
+        "Diamond": f'<path d="M 50 10 L 85 50 L 50 90 L 15 50 Z" {S_BASE} /><path d="M 25 60 L 50 90 L 75 60" {S_HL} />',
+        "Triangle": f'<path d="M 50 15 L 85 85 L 15 85 Z" {S_BASE} /><path d="M 25 70 L 50 25 L 75 70" {S_HL} />',
+        "Pear": f'<path d="M 50 10 C 35 10, 25 40, 20 65 C 15 90, 85 90, 80 65 C 75 40, 65 10, 50 10 Z" {S_BASE} /><path d="M 22 55 C 20 95, 80 95, 78 55" {S_HL} />',
     },
     "Eyes": {
-        "Almond": f'<path d="M 20 50 Q 50 20 80 50 Q 50 80 20 50 Z" {S_EYE} /><circle cx="50" cy="50" r="10" {S_EYE} />',
-        "Round": f'<path d="M 25 50 A 25 25 0 0 1 75 50 A 25 25 0 0 1 25 50" {S_EYE} /><circle cx="50" cy="50" r="12" {S_EYE} />',
-        "Hooded": f'<path d="M 20 55 Q 50 35 80 55 Q 50 80 20 55 Z" {S_EYE} /><path d="M 15 45 Q 50 15 85 45" {S_EYE} /><circle cx="50" cy="55" r="9" {S_EYE} />',
-        "Deep-set": f'<path d="M 25 55 Q 50 25 75 55 Q 50 85 25 55 Z" {S_EYE} /><path d="M 20 35 Q 50 15 80 35" stroke-width="4" stroke="#a78bfa" fill="none" /><circle cx="50" cy="55" r="9" {S_EYE} />',
-        "Monolid": f'<path d="M 20 50 Q 50 35 80 50 Q 50 65 20 50 Z" {S_EYE} /><circle cx="50" cy="50" r="8" {S_EYE} />',
-        "Wide-set": f'<path d="M 10 50 Q 25 35 40 50 Q 25 65 10 50 Z" {S_EYE} /><circle cx="25" cy="50" r="6" {S_EYE} /><path d="M 60 50 Q 75 35 90 50 Q 75 65 60 50 Z" {S_EYE} /><circle cx="75" cy="50" r="6" {S_EYE} />',
-        "Close-set": f'<path d="M 25 50 Q 40 30 45 50 Q 40 70 25 50 Z" {S_EYE} /><circle cx="35" cy="50" r="6" {S_EYE} /><path d="M 55 50 Q 60 30 75 50 Q 60 70 55 50 Z" {S_EYE} /><circle cx="65" cy="50" r="6" {S_EYE} />',
-        "Upturned": f'<path d="M 20 60 Q 50 30 85 40 Q 50 80 20 60 Z" {S_EYE} /><circle cx="52" cy="52" r="9" {S_EYE} />',
-        "Downturned": f'<path d="M 15 40 Q 50 30 80 60 Q 50 80 15 40 Z" {S_EYE} /><circle cx="48" cy="52" r="9" {S_EYE} />',
+        "Almond": f'<path d="M 20 50 Q 50 25 80 50 Q 50 75 20 50 Z" {S_BASE} /><path d="M 20 50 Q 50 25 80 50" {S_HL} /><circle cx="50" cy="50" r="10" {S_BASE} /><circle cx="50" cy="50" r="3" fill="#06b6d4" />',
+        "Round": f'<path d="M 25 50 A 25 25 0 0 1 75 50 A 25 25 0 0 1 25 50" {S_BASE} /><path d="M 25 50 A 25 25 0 0 1 75 50" {S_HL} /><circle cx="50" cy="50" r="12" {S_BASE} /><circle cx="50" cy="50" r="3" fill="#06b6d4" />',
+        "Hooded": f'<path d="M 20 55 Q 50 40 80 55 Q 50 75 20 55 Z" {S_BASE} /><path d="M 15 45 Q 50 20 85 45" {S_HL} /><circle cx="50" cy="55" r="9" {S_BASE} /><circle cx="50" cy="55" r="3" fill="#06b6d4" />',
+        "Deep-set": f'<path d="M 25 55 Q 50 30 75 55 Q 50 80 25 55 Z" {S_BASE} /><path d="M 20 35 Q 50 15 80 35" {S_HL} /><circle cx="50" cy="55" r="9" {S_BASE} /><circle cx="50" cy="55" r="3" fill="#06b6d4" />',
+        "Monolid": f'<path d="M 20 50 Q 50 40 80 50 Q 50 60 20 50 Z" {S_BASE} /><path d="M 20 50 Q 50 40 80 50" {S_HL} /><circle cx="50" cy="50" r="8" {S_BASE} /><circle cx="50" cy="50" r="2.5" fill="#06b6d4" />',
+        "Wide-set": f'<path d="M 10 50 Q 25 35 40 50 Q 25 65 10 50 Z" {S_BASE} /><path d="M 10 50 Q 25 35 40 50" {S_HL} /><circle cx="25" cy="50" r="6" {S_BASE} /><circle cx="25" cy="50" r="2.5" fill="#06b6d4" /><path d="M 60 50 Q 75 35 90 50 Q 75 65 60 50 Z" {S_BASE} /><path d="M 60 50 Q 75 35 90 50" {S_HL} /><circle cx="75" cy="50" r="6" {S_BASE} /><circle cx="75" cy="50" r="2.5" fill="#06b6d4" />',
+        "Close-set": f'<path d="M 25 50 Q 37 35 50 50 Q 37 65 25 50 Z" {S_BASE} /><path d="M 25 50 Q 37 35 50 50" {S_HL} /><circle cx="37" cy="50" r="7" {S_BASE} /><circle cx="37" cy="50" r="2.5" fill="#06b6d4" /><path d="M 50 50 Q 63 35 75 50 Q 63 65 50 50 Z" {S_BASE} /><path d="M 50 50 Q 63 35 75 50" {S_HL} /><circle cx="63" cy="50" r="7" {S_BASE} /><circle cx="63" cy="50" r="2.5" fill="#06b6d4" />',
+        "Upturned": f'<path d="M 20 60 Q 50 35 85 45 Q 50 80 20 60 Z" {S_BASE} /><path d="M 20 60 Q 50 35 85 45" {S_HL} /><circle cx="52" cy="54" r="9" {S_BASE} /><circle cx="52" cy="54" r="3" fill="#06b6d4" />',
+        "Downturned": f'<path d="M 15 45 Q 50 35 80 60 Q 50 80 15 45 Z" {S_BASE} /><path d="M 15 45 Q 50 35 80 60" {S_HL} /><circle cx="48" cy="54" r="9" {S_BASE} /><circle cx="48" cy="54" r="3" fill="#06b6d4" />',
     },
     "Nose": {
-        "Straight": f'<path d="M 43 20 L 43 65 M 57 20 L 57 65 M 35 70 Q 50 82 65 70" {S_NOSE} />',
-        "Broad": f'<path d="M 50 20 L 50 60 M 25 70 Q 50 90 75 70" {S_NOSE} />',
-        "Narrow": f'<path d="M 50 20 L 50 75 M 42 75 Q 50 85 58 75" {S_NOSE} />',
-        "Aquiline": f'<path d="M 50 20 Q 70 45 50 70 M 35 70 Q 50 85 65 70" {S_NOSE} />',
-        "Button": f'<path d="M 50 30 L 50 60 M 35 65 Q 50 80 65 65 M 50 60 A 5 5 0 1 1 50 70 A 5 5 0 1 1 50 60" {S_NOSE} />',
-        "Wide bridge": f'<path d="M 40 20 L 40 60 M 60 20 L 60 60 M 30 70 Q 50 85 70 70" {S_NOSE} />',
-        "Snub": f'<path d="M 50 30 Q 35 50 50 65 M 35 70 Q 50 75 65 70 M 50 70 L 50 65" {S_NOSE} />',
-        "Roman": f'<path d="M 50 15 Q 65 30 50 50 L 50 75 M 35 75 Q 50 90 65 75" {S_NOSE} />',
-        "Bulbous": f'<path d="M 50 20 L 50 50 M 30 70 Q 50 100 70 70 M 50 50 A 15 15 0 1 1 50 80 A 15 15 0 1 1 50 50" {S_NOSE} />',
-        "Hawk": f'<path d="M 50 20 Q 80 40 50 80 M 35 75 Q 50 85 65 75" {S_NOSE} />',
+        "Straight": f'<path d="M 45 20 L 45 65 M 55 20 L 55 65" {S_BASE} /><path d="M 35 70 Q 50 80 65 70" {S_HL} />',
+        "Broad": f'<path d="M 50 20 L 50 63" {S_BASE} /><path d="M 25 70 Q 50 85 75 70" {S_HL} />',
+        "Narrow": f'<path d="M 50 20 L 50 75" {S_BASE} /><path d="M 42 75 Q 50 82 58 75" {S_HL} />',
+        "Aquiline": f'<path d="M 50 20 Q 65 45 50 70" {S_BASE} /><path d="M 35 70 Q 50 80 65 70" {S_HL} />',
+        "Button": f'<path d="M 50 30 L 50 60 M 50 60 A 5 5 0 1 1 50 70 A 5 5 0 1 1 50 60" {S_BASE} /><path d="M 35 65 Q 50 75 65 65" {S_HL} />',
+        "Wide bridge": f'<path d="M 40 20 L 40 60 M 60 20 L 60 60" {S_BASE} /><path d="M 30 70 Q 50 80 70 70" {S_HL} />',
+        "Snub": f'<path d="M 50 30 Q 38 50 50 65 M 50 70 L 50 65" {S_BASE} /><path d="M 35 70 Q 50 75 65 70" {S_HL} />',
+        "Roman": f'<path d="M 50 15 Q 65 30 50 50 L 50 75" {S_BASE} /><path d="M 35 75 Q 50 85 65 75" {S_HL} />',
+        "Bulbous": f'<path d="M 50 20 L 50 50 M 50 50 A 15 15 0 1 1 50 80 A 15 15 0 1 1 50 50" {S_BASE} /><path d="M 30 70 Q 50 95 70 70" {S_HL} />',
+        "Hawk": f'<path d="M 50 20 Q 75 40 50 80" {S_BASE} /><path d="M 35 75 Q 50 82 65 75" {S_HL} />',
     },
     "Jawline": {
-        "Strong": f'<path d="M 20 20 L 20 60 L 40 85 L 60 85 L 80 60 L 80 20" {S_JAW} />',
-        "Soft": f'<path d="M 20 20 Q 20 90 50 90 Q 80 90 80 20" {S_JAW} />',
-        "Pointed": f'<path d="M 20 20 L 30 60 L 50 95 L 70 60 L 80 20" {S_JAW} />',
-        "Wide": f'<path d="M 10 20 L 10 70 L 40 90 L 60 90 L 90 70 L 90 20" {S_JAW} />',
-        "Receding": f'<path d="M 30 20 L 30 50 Q 50 70 70 50 L 70 20" {S_JAW} />',
-        "V-shaped": f'<path d="M 20 20 L 35 60 L 50 95 L 65 60 L 80 20" {S_JAW} />',
+        "Strong": f'<path d="M 20 20 L 20 60 L 40 85 L 60 85 L 80 60 L 80 20" {S_BASE} /><path d="M 20 60 L 40 85 L 60 85 L 80 60" {S_HL} />',
+        "Soft": f'<path d="M 20 20 Q 20 90 50 90 Q 80 90 80 20" {S_BASE} /><path d="M 25 70 Q 50 90 75 70" {S_HL} />',
+        "Pointed": f'<path d="M 20 20 L 30 60 L 50 95 L 70 60 L 80 20" {S_BASE} /><path d="M 30 60 L 50 95 L 70 60" {S_HL} />',
+        "Wide": f'<path d="M 10 20 L 10 70 L 35 90 L 65 90 L 90 70 L 90 20" {S_BASE} /><path d="M 10 70 L 35 90 L 65 90 L 90 70" {S_HL} />',
+        "Receding": f'<path d="M 30 20 L 30 50 Q 50 70 70 50 L 70 20" {S_BASE} /><path d="M 30 50 Q 50 70 70 50" {S_HL} />',
+        "V-shaped": f'<path d="M 20 20 L 35 55 L 50 90 L 65 55 L 80 20" {S_BASE} /><path d="M 35 55 L 50 90 L 65 55" {S_HL} />',
     }
 }

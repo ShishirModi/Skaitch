@@ -51,11 +51,15 @@ Skaitch has been re-engineered to move past legacy limitations.
 Originally, Phase II used **DeepFaceDrawing (DFD)** on the Jittor framework.
 - **Issues:** Rigid 512x512 resolution, extreme dependency friction (JVC/GCC-13), and limited realism.
 
-### 4.2 Modern: SDXL-ControlNet (Current)
-The current architecture is built on a modern, stable Diffusers stack.
+### 4.2 Modern: SDXL-ControlNet (V1 to V2)
+The architecture was rebuilt on a modern, stable Diffusers stack.
 - **Superior Quality:** Native 1024px resolution and cinematic skin synthesis.
-- **Stability:** Removed all custom JIT compilers, making the app portable across standard Linux/CUDA environments.
 - **Precision:** Dynamic prompt synchronization ensures the "Photographic" pass matches the "Sketch" pass exactly.
+
+### 4.3 V2.1: Overcoming Diffusion Limitations
+During rigorous testing, two fundamental limitations of diffusion models in a forensic context were identified and resolved:
+- **Attention Bleed (Hallucinations):** SDXL's CLIP encoders struggle with long lists of comma-separated traits (e.g., "blue eyes, oval face, narrow nose..."), often hallucinating missing features or applying colors to the wrong body part. **Solution:** Implemented **Narrative Prompting**—dynamically generating coherent, grammatically correct English sentences from categorical inputs to enforce strict trait adherence.
+- **Inflexible Geometry (Global i2i):** Making a structural geometric edit (e.g., widening a jaw) requires high-denoise strength, which destroys the rest of the face's identity in a standard Image-to-Image pipeline. **Solution:** Implemented **Regional Inpainting**. Operators now physically mask the target trait, allowing the system to blast 85% noise strictly into the masked region while keeping 95% of the face mathematically frozen, exactly mirroring professional forensic reconstruction standards.
 
 ---
 
@@ -81,12 +85,16 @@ streamlit run app.py
 
 ---
 
-## 6. User Interface (V2 Iterative Workflow)
+## 6. User Interface & V2 Iterative Workflow
 
-- **Draft → Select → Edit → Render:** The operator generates 3 sketch variants, selects the best one, iteratively edits it via natural-language instructions (SDXL i2i), and only triggers the photorealistic ControlNet pass when satisfied.
-- **Edit Controls:** Adjustable denoise strength (0.15–0.60) and full undo history for non-destructive editing. CodeFormer is applied after every edit.
-- **Telemetry Overview:** Real-time monitoring of CUDA device and VRAM status in the sidebar.
-- **Auto-Persistent Storage:** Finalized sketches and refinements are automatically saved to `data/` with unique timestamps.
+Skaitch features a **Professional SaaS Dashboard** aesthetic utilizing a deep Slate & Forensic Cyan theme for clinical precision.
+
+- **Main Canvas Feature Cards:** Primary morphological traits (Face, Eyes, Nose, Hair, Marks) are structured into categorical dashboard widget cards.
+- **Instrument Panel Sidebar:** GPU telemetry, parameters, and dimension controls are isolated in a clean control sidebar.
+- **Precision Visual Aids:** Custom two-tone SVG diagrams anchor trait selections with professional clarity.
+- **Draft → Select → Edit → Render:** The operator generates 3 sketch variants (displayed as vertical stacked cards), selects the best one, iteratively edits it via interactive mask painting and natural-language instructions (SDXL Inpainting), and triggers the photorealistic ControlNet pass when satisfied.
+- **Edit Controls:** Interactive drawable canvas with adjustable brush size and inpaint denoise strength (0.50–1.00). Full undo history is maintained for non-destructive editing.
+- **Auto-Persistent Storage:** Finalized sketches and refinements are saved to `data/` with unique timestamps.
 
 ### V2 Workflow Architecture
 
