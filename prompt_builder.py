@@ -296,11 +296,3 @@ def build_edit_prompt(
     base_prompt += ", best quality, masterpiece, highly detailed face"
 
     return base_prompt, FORENSIC_NEGATIVE
-
-def build_sdxl_refinement_prompt(
-    features: dict[str, str],
-    extra_details: str = "",
-) -> tuple[str, str]:
-    """Wrapper for SDXL refinement pass."""
-    prompt, neg = build_refinement_prompt(features, extra_details)
-    return prompt + ", best quality, highly detailed face", neg

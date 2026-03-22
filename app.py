@@ -51,8 +51,18 @@ st.markdown(
         color: #1C1C1E;
     }
     
-    .stApp {
-        background-color: #FFFFFF;
+    /* Enforce Light Mode strictly for .stApp and its children */
+    .stApp, .stApp > header, [data-testid="stAppViewContainer"], .main {
+        background-color: #FFFFFF !important;
+        color: #1C1C1E !important;
+    }
+    input, select, textarea, .stSelectbox > div > div, .stTextInput > div > div, .stNumberInput > div > div {
+        background-color: #F9FAFB !important;
+        color: #1C1C1E !important;
+        border-color: rgba(28,28,30,0.1) !important;
+    }
+    .stMarkdown, .stText, h1, h2, h3, h4, h5, h6, p, label {
+        color: #1C1C1E !important;
     }
 
     [class*="material-symbols"], [data-testid*="Icon"], [data-testid*="stIcon"], .st-icon {
@@ -375,14 +385,16 @@ def load_pipeline():
 
 def run_codeformer(img: Image.Image) -> Image.Image:
     """True CodeFormer face restoration. Returns original on failure."""
-    try:
-        if torch.cuda.is_available():
-            # Apply real restoration
+    if torch.cuda.is_available():
+        try:
             return face_restoration.run_codeformer(img, fidelity=0.5)
-        return img
-    except Exception as e:
-        print(f"⚠️ CodeFormer recovery failed: {e}")
-        return img
+        except Exception as e:
+            print(f"⚠️ CodeFormer recovery failed: {e}")
+            if "codeformer_errors" not in st.session_state:
+                st.session_state.codeformer_errors = []
+            st.session_state.codeformer_errors.append(str(e))
+            return img
+    return img
 
 
 # ─── Header ────────────────────────────────────────────────────────────────────
@@ -435,8 +447,8 @@ with st.sidebar:
             st.success("✅ Admin Mode Active")
             # Example Admin specific options
             st.markdown("**Admin Controls**")
-            admin_debug = st.checkbox("Show Debug Metrics", value=False)
-            admin_save_disabled = st.checkbox("Disable Auto-Save to Disk", value=False)
+            admin_debug = st.checkbox("Show Debug Metrics", value=False, key="Show Debug Metrics")
+            admin_save_disabled = st.checkbox("Disable Auto-Save to Disk", value=False, key="Disable Auto-Save to Disk")
             
             st.divider()
             st.markdown("**Image Gallery**")
@@ -673,6 +685,11 @@ if generate:
     st.session_state.v2_sketch_style = sketch_style
     st.session_state.v2_edit_history = []
     st.session_state.v2_selected_sketch = None
+    
+    if "codeformer_errors" in st.session_state and st.session_state.codeformer_errors:
+        for err in st.session_state.codeformer_errors:
+            st.toast(f"⚠️ CodeFormer restoration failed/skipped: {err}")
+        st.session_state.codeformer_errors = []
 
 # ─── STATE 1: DRAFTING — Display variants with selection buttons ──────────────
 if st.session_state.v2_stage == "drafting" and st.session_state.v2_drafts:

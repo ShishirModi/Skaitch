@@ -2,6 +2,7 @@ import os
 import subprocess
 import urllib.request
 from dotenv import load_dotenv
+from huggingface_hub import snapshot_download
 
 load_dotenv()
 
@@ -34,8 +35,6 @@ def check_and_download_controlnet():
         print(f"✅ ControlNet model installed successfully in {CONTROLNET_OUTPUT_DIR}.")
     else:
         print(f"✅ ControlNet model already exists at {CONTROLNET_OUTPUT_DIR}.")
-
-from huggingface_hub import snapshot_download
 
 def check_and_download_models():
     """Checks if models are present on the NVMe drive and downloads them if not."""

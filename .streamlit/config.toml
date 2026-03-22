@@ -4,3 +4,8 @@ primaryColor="#F59E0B"
 backgroundColor="#FFFFFF"
 secondaryBackgroundColor="#F8F8F7"
 textColor="#1C1C1E"
+
+[server]
+enableCORS = false
+enableXsrfProtection = false
+enableWebsocketCompression = false

@@ -11,29 +11,27 @@ from PIL import Image
 # Setup CodeFormer import path
 codeformer_dir = os.path.join(os.path.dirname(__file__), "external", "CodeFormer")
 if codeformer_dir not in sys.path:
-    sys.path.append(codeformer_dir)
+    sys.path.insert(0, codeformer_dir)
 
-# Global caches
+# Global caches (stored on CPU to save VRAM)
 _face_helper = None
 _codeformer_net = None
 
 def load_codeformer_models():
-    """Lazy load CodeFormer and FaceRestoreHelper."""
+    """Lazy load CodeFormer and FaceRestoreHelper to CPU."""
     global _face_helper, _codeformer_net
     if _codeformer_net is not None:
         return _face_helper, _codeformer_net
 
-    from basicsr.utils import img2tensor, tensor2img
     from facexlib.utils.face_restoration_helper import FaceRestoreHelper
     
     # Surgical import from the cloned repository's local basicsr
-    # To avoid conflict with pip-installed basicsr, we ensure external/CodeFormer is at index 0
     if codeformer_dir not in sys.path:
         sys.path.insert(0, codeformer_dir)
         
     from basicsr.archs.codeformer_arch import CodeFormer
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cpu")
     
     # 1. Initialize FaceRestoreHelper (for detection/alignment)
     _face_helper = FaceRestoreHelper(
@@ -55,13 +53,17 @@ def load_codeformer_models():
     ).to(device)
     
     # 3. Load weights
-    ckpt_path = os.path.join(codeformer_dir, "weights", "CodeFormer", "codeformer.pth")
+    base_models_dir = os.environ.get("SKAITCH_MODEL_DIR", os.path.join(os.path.dirname(__file__), "models"))
+    ckpt_path = os.path.join(base_models_dir, "codeformer", "codeformer.pth")
+    if not os.path.exists(ckpt_path):
+        ckpt_path = os.path.join(codeformer_dir, "weights", "CodeFormer", "codeformer.pth")
+        
     if os.path.exists(ckpt_path):
         checkpoint = torch.load(ckpt_path, map_location=device)['params_ema']
         _codeformer_net.load_state_dict(checkpoint)
         _codeformer_net.eval()
     else:
-        print(f"⚠️ CodeFormer weights not found at {ckpt_path}")
+        raise FileNotFoundError(f"CodeFormer weights not found at {ckpt_path}")
 
     return _face_helper, _codeformer_net
 
@@ -70,9 +72,16 @@ def run_codeformer(img_pil: Image.Image, fidelity: float = 0.5) -> Image.Image:
     Apply CodeFormer restoration to a PIL image.
     fidelity: 0.0 (max restoration) to 1.0 (max fidelity to original).
     """
+    helper, net = load_codeformer_models()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    
     try:
-        helper, net = load_codeformer_models()
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        # Move models to GPU explicitly for inference
+        if device.type == "cuda":
+            net = net.to(device)
+            helper.face_det = helper.face_det.to(device)
+            if hasattr(helper, 'face_parse') and helper.face_parse is not None:
+                helper.face_parse = helper.face_parse.to(device)
         
         from basicsr.utils import img2tensor, tensor2img
         
@@ -106,6 +115,11 @@ def run_codeformer(img_pil: Image.Image, fidelity: float = 0.5) -> Image.Image:
         # Convert back to PIL
         return Image.fromarray(cv2.cvtColor(restored_img, cv2.COLOR_BGR2RGB))
         
-    except Exception as e:
-        print(f"⚠️ CodeFormer restoration failed: {e}")
-        return img_pil # Fallback to original image on error
+    finally:
+        # Prevent VRAM Leak: Move models back to CPU 
+        if device.type == "cuda":
+            net = net.to("cpu")
+            helper.face_det = helper.face_det.to("cpu")
+            if hasattr(helper, 'face_parse') and helper.face_parse is not None:
+                helper.face_parse = helper.face_parse.to("cpu")
+            torch.cuda.empty_cache()
