@@ -93,7 +93,7 @@ def run_codeformer(img_pil: Image.Image, fidelity: float = 0.5) -> Image.Image:
         helper.read_image(img_cv)
         
         # Detect and align faces
-        helper.get_face_endpoints(5) # max faces
+        helper.get_face_landmarks_5(only_center_face=False, resize=640, eye_dist_threshold=5)
         helper.align_warp_face()
         
         # Restore each face
