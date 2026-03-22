@@ -193,7 +193,7 @@ def build_forensic_prompt(
     sentences = _build_narrative(features, is_photo=False)
     
     # Prefix medium
-    prompt = f"A highly detailed {style.lower()} {sentences[0]} {' '.join(sentences[1:])}"
+    prompt = f"A highly detailed front facing {style.lower()} {sentences[0]} {' '.join(sentences[1:])}"
 
     # Style tokens for quality
     quality_tokens = (
@@ -235,7 +235,7 @@ def build_refinement_prompt(
 
     # Quality tokens for photorealism
     photo_tokens = (
-        "hyper-realistic face, highly detailed skin texture, pores, 8k resolution, "
+        "hyper-realistic front facing face, highly detailed skin texture, pores, 8k resolution, "
         "cinematic lighting, masterpiece, sharp focus, professional photography, "
         "detailed eyes, detailed hair texture"
     )
