@@ -749,7 +749,7 @@ elif st.session_state.v2_stage == "editing" and st.session_state.v2_selected_ske
     st.markdown("#### ✏️ Phase I: Iterative Sketch Refinement")
 
     # Show current sketch with Inpainting Canvas overlay
-    from skaitch_canvas import st_skaitch_canvas as st_canvas
+    from streamlit_drawable_canvas import st_canvas
     import numpy as np
     from PIL import Image
 
@@ -809,6 +809,7 @@ elif st.session_state.v2_stage == "editing" and st.session_state.v2_selected_ske
         aspect_ratio = bg_image.height / bg_image.width
         display_height = int(display_width * aspect_ratio)
 
+        # Using official ST Drawable Canvas for better proxy compatibility
         canvas_result = st_canvas(
             fill_color="rgba(255, 255, 255, 1)",  # Pure white filling
             stroke_width=brush_size,

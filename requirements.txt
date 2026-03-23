@@ -16,6 +16,7 @@ controlnet-aux
 basicsr
 facexlib
 xformers
+streamlit-drawable-canvas==0.9.3
 
 # Note: Photorealistic Refinement (Phase 2) is automatically initialized via SDXL ControlNet
 # and runs on native PyTorch/Diffusers. All weights are fetched to NVMe automatically.

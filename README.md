@@ -7,7 +7,7 @@ Skaitch is a professional-grade forensic sketching and photorealistic refinement
 
 *   **Phase I (Narrative Prompting):** Leverages a sophisticated prompt builder to construct grammatical narratives from categorical facial features. The SDXL Base 1.0 model parses this narrative to generate structural sketch variants.
 *   **Phase II (ControlNet Refinement):** Uses the `diffusers/controlnet-canny-sdxl-1.0` pipeline to elevate the finalized sketch into a photorealistic composite, maintaining precise geometric fidelity.
-*   **Targeted Mask Inpainting:** Features a custom React-based canvas (`skaitch_canvas`) integrated into Streamlit, allowing operators to draw masks and apply specific structural edits (e.g., "make the nose more pointed") without degrading the rest of the image.
+*   **Targeted Mask Inpainting:** Features the `streamlit-drawable-canvas` integration, allowing operators to draw masks and apply specific structural edits (e.g., "make the nose more pointed") without degrading the rest of the image. Optimized for reverse-proxy and Cloudflare Tunnel stability.
 *   **Automated Face Restoration:** Non-destructive integration of the CodeFormer network (`sczhou/CodeFormer`) cleans up and sharpens generated faces, neutralizing diffusion artifacts before final rendering.
 
 ## 🛠️ System Requirements
@@ -70,7 +70,7 @@ Skaitch uses a tailored CSS overlay enforcing a clean, high-contrast B2B SaaS ae
 *   `refinement_pipeline.py`: Stage II Canny edge detection and SDXL-ControlNet inferencing.
 *   `sketch_refiner.py`: Localized SDXL Inpainting for iterative editing workflows.
 *   `visual_aids.py`: Inlines raw SVGs providing anatomical reference for operators.
-*   `skaitch_canvas/`: Custom bidirectional React component ensuring Streamlit state doesn't wipe active canvas masks.
+*   `.streamlit/config.toml`: Enforces light mode and disables CORS/XSRF to support Cloudflare Tunnel deployments.
 
 ## 🛡️ License
 Skaitch is licensed under the MIT License. See `LICENSE` for more information.
