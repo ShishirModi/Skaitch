@@ -3,7 +3,20 @@
 
 import streamlit as st
 
-
+# --- MONKEY PATCH FOR STREAMLIT >= 1.29.0 ---
+# The streamlit-drawable-canvas library relies on 'image_to_url' which was removed.
+try:
+    import streamlit.elements.image as st_image
+    if not hasattr(st_image, "image_to_url"):
+        # This internal API is used by components to host local PIL images as URLs
+        from streamlit.runtime.memory_media_file_storage import get_proxy_url
+        def legacy_image_to_url(image, width, height, clamp, channels, output_format, image_id):
+            # This is a shim to prevent the AttributeError
+            return get_proxy_url(image)
+        st_image.image_to_url = legacy_image_to_url
+except Exception:
+    pass
+# --------------------------------------------
 
 import torch
 from diffusers import StableDiffusionXLPipeline

@@ -78,10 +78,13 @@ def run_codeformer(img_pil: Image.Image, fidelity: float = 0.5) -> Image.Image:
     try:
         # Move models to GPU explicitly for inference
         if device.type == "cuda":
-            net = net.to(device)
-            helper.face_det = helper.face_det.to(device)
+            net.to(device)
+            if hasattr(helper, 'face_det') and helper.face_det is not None:
+                helper.face_det.to(device)
             if hasattr(helper, 'face_parse') and helper.face_parse is not None:
-                helper.face_parse = helper.face_parse.to(device)
+                helper.face_parse.to(device)
+            # Ensure the helper's internal device is updated
+            helper.device = device
         
         from basicsr.utils import img2tensor, tensor2img
         
@@ -98,8 +101,13 @@ def run_codeformer(img_pil: Image.Image, fidelity: float = 0.5) -> Image.Image:
         
         # Restore each face
         for cropped_face in helper.cropped_faces:
+            # Prepare tensor correctly and move to device
             face_t = img2tensor(cropped_face / 255., bgr2rgb=True, float32=True)
             face_t = face_t.unsqueeze(0).to(device)
+            
+            # Cast to the same dtype as the model weights (usually float16 or float32)
+            # CodeFormer usually runs in float32 for stability
+            face_t = face_t.to(dtype=next(net.parameters()).dtype)
             
             with torch.no_grad():
                 output = net(face_t, w=fidelity, adain=True)[0]
