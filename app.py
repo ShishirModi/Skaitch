@@ -4,16 +4,24 @@
 import streamlit as st
 
 # --- MONKEY PATCH FOR STREAMLIT >= 1.29.0 ---
-# The streamlit-drawable-canvas library relies on 'image_to_url' which was removed.
+# The streamlit-drawable-canvas 0.9.3 library calls:
+#     streamlit.elements.image.image_to_url(image, width, clamp, channels, output_format, image_id)
+# but Streamlit >= 1.29 moved this function to streamlit.elements.lib.image_utils
+# and changed the second parameter from `width` (int) to `layout_config` (LayoutConfig).
+# This shim adapts the old call signature to the new internal API.
 try:
-    import streamlit.elements.image as st_image
-    if not hasattr(st_image, "image_to_url"):
-        # This internal API is used by components to host local PIL images as URLs
-        from streamlit.runtime.memory_media_file_storage import get_proxy_url
-        def legacy_image_to_url(image, width, height, clamp, channels, output_format, image_id):
-            # This is a shim to prevent the AttributeError
-            return get_proxy_url(image)
-        st_image.image_to_url = legacy_image_to_url
+    import streamlit.elements.image as _st_image_module
+    if not hasattr(_st_image_module, "image_to_url"):
+        from streamlit.elements.lib.image_utils import image_to_url as _new_image_to_url
+        from streamlit.elements.lib.layout_utils import LayoutConfig as _LayoutConfig
+
+        def _legacy_image_to_url(image, width, clamp, channels, output_format, image_id):
+            """Compatibility shim: converts old-style (width: int) calls to new
+            LayoutConfig-based signature used by Streamlit >= 1.29."""
+            layout_cfg = _LayoutConfig(width=width)
+            return _new_image_to_url(image, layout_cfg, clamp, channels, output_format, image_id)
+
+        _st_image_module.image_to_url = _legacy_image_to_url
 except Exception:
     pass
 # --------------------------------------------
