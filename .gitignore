@@ -16,3 +16,11 @@ __pycache__/
 
 # Ignore external models
 external/
+
+# Ignore documents
+*.docx
+*.doc
+*.pptx
+*.pdf
+
+CLAUDE.md

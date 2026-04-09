@@ -53,37 +53,44 @@ def run_sdxl_refinement(sketch_pil: Image.Image, features: dict, extra_details: 
     """
     Takes an SDXL-generated sketch or a hand-drawn sketch and 
     refines it into a photorealistic face using ControlNet.
+    Uses adaptive multi-modal edge detection, adaptive ControlNet conditioning scale,
+    and region-specific post-generation sharpening from refinement_enhancements.py.
     """
-    # 1. Preprocess the sketch for Canny
-    # Convert to numpy for CV2 processing
-    img_np = np.array(sketch_pil.convert("L"))
-    
-    # Run Canny edge detection
-    # Generated sketches are usually clean, so we use relatively standard thresholds
     import cv2
-    edges = cv2.Canny(img_np, 100, 200)
-    
-    # ControlNet-Canny expects white lines on black background
-    # cv2.Canny already returns this format (edges are 255, background 0)
-    control_image = Image.fromarray(edges)
-    
-    # 2. Build the "Refinement" prompt using the centralized prompt builder
+    from refinement_enhancements import (
+        fused_edge_detection,
+        compute_adaptive_controlnet_scale,
+        RegionalGuidanceScaler,
+    )
+
+    # 1. Preprocess sketch with adaptive multi-modal edge detection
+    # Combines Canny + Sobel + Laplacian with contrast-adaptive thresholds.
+    # Handles post-editing contrast degradation that would break fixed thresholds.
+    control_image_pil = fused_edge_detection(sketch_pil)
+    control_image_np = np.array(control_image_pil)  # grayscale numpy for scale computation
+
+    # 2. Compute adaptive ControlNet conditioning scale based on actual edge quality
+    # Sharp fresh sketches → ~0.75 (strict geometry), soft edited sketches → ~0.55 (more freedom)
+    controlnet_scale = compute_adaptive_controlnet_scale(control_image_np)
+
+    # 3. Build the Refinement prompt
     from prompt_builder import build_sdxl_refinement_prompt
     refinement_prompt, negative_prompt = build_sdxl_refinement_prompt(features, extra_details)
 
-    # 3. Run Inference
+    # 4. Run Inference
     pipe = load_refinement_pipeline()
-    
-    # We use a relatively low guidance scale and moderate control strength
-    # to allow the model to "fill in" the photorealistic details while
-    # strictly following the sketch geometry.
+
     result = pipe(
         prompt=refinement_prompt,
-        image=control_image,
+        image=control_image_pil,
         negative_prompt=negative_prompt,
-        controlnet_conditioning_scale=0.65, # Lowered to allow prompt-driven eye color and textures
+        controlnet_conditioning_scale=controlnet_scale,
         num_inference_steps=30,
         guidance_scale=9.0,
     ).images[0]
+
+    # 5. Apply region-specific post-processing sharpening to eyes and mouth
+    # Enhances perceptual quality of the two most forensically critical regions.
+    result = RegionalGuidanceScaler.apply_regional_sharpening(result)
 
     return result

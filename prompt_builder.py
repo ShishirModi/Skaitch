@@ -105,7 +105,193 @@ FORENSIC_DEFAULTS = {
     "num_inference_steps": 30,
 }
 
+# ─── Improvement 1.5: Ethnicity-Specific Anatomical Grounding ─────────────────
+# Each ethnicity maps to anatomically-informed descriptors that improve coherence
+ETHNICITY_ANATOMICAL_DESCRIPTORS = {
+    "Caucasian / White": [
+        "varied nose bridge, prominent cheekbones, diverse eye set",
+    ],
+    "African / Black": [
+        "fuller lips, broader nose structure, prominent nasal base, diverse eye setting, rich skin undertones",
+    ],
+    "East Asian": [
+        "straighter nose bridge, prominent cheekbones, varied eye set including monolid variations",
+    ],
+    "South Asian": [
+        "darker iris, distinctive brow positioning, varied nose structure and bridge, varied eye set",
+    ],
+    "Southeast Asian": [
+        "moderate nose bridge, varied eye set, distinctive cheekbone prominence, diverse undertones",
+    ],
+    "Middle Eastern / North African": [
+        "pronounced nose bridge, defined cheekbones, varied eye set, rich skin undertones",
+    ],
+    "Hispanic / Latino": [
+        "varied nose structure, diverse cheekbone prominence, varied eye set, warm skin undertones",
+    ],
+    "Native American / Indigenous": [
+        "distinctive cheekbone structure, varied nose bridge, varied eye set, warm undertones",
+    ],
+    "Pacific Islander": [
+        "rounded facial features, diverse cheekbones, varied eye set, warm undertones",
+    ],
+    "Mixed / Multiracial": [
+        "diverse facial feature combination, varied eye set, mixed undertones",
+    ],
+}
+
+# ─── Improvement 2.3: Prompt-Based Mask Region Inference ────────────────────────
+# Maps edit verbs/nouns to anatomical regions for auto-mask suggestions
+EDIT_REGION_MAPPING = {
+    # Nose edits
+    "nose": {"region": "nose", "dilate_px": 25, "buffer": "cheeks_forehead"},
+    "nostr": {"region": "nose", "dilate_px": 25, "buffer": "cheeks_forehead"},
+    "bridge": {"region": "nose", "dilate_px": 20, "buffer": "cheeks_forehead"},
+    "tip": {"region": "nose", "dilate_px": 15, "buffer": "cheeks_forehead"},
+    "sharper": {"region": "nose", "dilate_px": 30, "buffer": "cheeks_forehead"},
+    "wider": {"region": "nose", "dilate_px": 35, "buffer": "cheeks"},
+    "narrower": {"region": "nose", "dilate_px": 25, "buffer": "cheeks"},
+    "pointed": {"region": "nose", "dilate_px": 20, "buffer": "cheeks_forehead"},
+    "aquiline": {"region": "nose", "dilate_px": 25, "buffer": "cheeks_forehead"},
+
+    # Jawline edits
+    "jaw": {"region": "jaw", "dilate_px": 40, "buffer": "cheeks_neck"},
+    "jawline": {"region": "jaw", "dilate_px": 40, "buffer": "cheeks_neck"},
+    "chin": {"region": "jaw", "dilate_px": 35, "buffer": "neck"},
+    "stronger": {"region": "jaw", "dilate_px": 45, "buffer": "cheeks_neck"},
+    "weaker": {"region": "jaw", "dilate_px": 35, "buffer": "cheeks_neck"},
+
+    # Eye edits
+    "eye": {"region": "eyes", "dilate_px": 30, "buffer": "eyebrows_cheeks"},
+    "eyes": {"region": "eyes", "dilate_px": 30, "buffer": "eyebrows_cheeks"},
+    "color": {"region": "eyes", "dilate_px": 20, "buffer": "none"},
+    "iris": {"region": "eyes", "dilate_px": 15, "buffer": "none"},
+    "wider": {"region": "eyes", "dilate_px": 35, "buffer": "eyebrows_cheeks"},
+    "larger": {"region": "eyes", "dilate_px": 35, "buffer": "eyebrows_cheeks"},
+    "smaller": {"region": "eyes", "dilate_px": 25, "buffer": "eyebrows_cheeks"},
+
+    # Mouth edits
+    "mouth": {"region": "mouth", "dilate_px": 25, "buffer": "chin"},
+    "lips": {"region": "mouth", "dilate_px": 25, "buffer": "chin"},
+    "fuller": {"region": "mouth", "dilate_px": 30, "buffer": "chin"},
+    "thinner": {"region": "mouth", "dilate_px": 20, "buffer": "chin"},
+
+    # Hair edits
+    "hair": {"region": "hair", "dilate_px": 60, "buffer": "forehead"},
+    "style": {"region": "hair", "dilate_px": 60, "buffer": "forehead"},
+
+    # Cheek edits
+    "cheek": {"region": "cheeks", "dilate_px": 40, "buffer": "eyes_jaw"},
+    "cheeks": {"region": "cheeks", "dilate_px": 40, "buffer": "eyes_jaw"},
+
+    # Forehead edits
+    "forehead": {"region": "forehead", "dilate_px": 35, "buffer": "hair"},
+}
+
+# ─── Feature Complexity Weights for Adaptive Guidance (Improvement 1.3) ───────
+FEATURE_GUIDANCE_WEIGHTS = {
+    "Gender": 1.0,
+    "Age range": 1.0,
+    "Face shape": 1.1,
+    "Eyes": 1.2,           # Complex feature
+    "Eyebrows": 1.05,
+    "Nose": 1.15,          # Very complex feature
+    "Mouth / Lips": 1.1,   # Complex feature
+    "Jawline": 1.1,        # Complex feature
+    "Hair style": 0.95,    # Simple (high-level)
+    "Hair color": 0.9,     # Simple (straightforward)
+    "Facial hair": 1.05,
+    "Ethnicity": 1.0,
+    "Skin tone": 0.9,      # Simple
+    "Eye color": 1.05,
+    "Spectacles": 1.0,
+    "Spectacles Tint": 0.85,
+    "Distinguishing marks": 1.1,
+}
+
 # ─── Prompt Builder ──────────────────────────────────────────────────────────
+
+
+def _get_ethnicity_anatomical_boost(ethnicity: str) -> str:
+    """Return ethnicity-specific anatomical descriptors (Improvement 1.5)."""
+    if ethnicity and ethnicity != "None":
+        descriptors = ETHNICITY_ANATOMICAL_DESCRIPTORS.get(ethnicity, [])
+        if descriptors:
+            return descriptors[0]
+    return ""
+
+
+def compute_adaptive_guidance_scale(features: dict[str, str], base_guidance: float = 12.0) -> float:
+    """Compute adaptive guidance scale based on feature complexity (Improvement 1.3).
+
+    Simple features (hair style, color) use lower guidance to avoid over-constraint.
+    Complex features (nose, eyes, jawline) use higher guidance for precision.
+
+    Returns:
+        guidance_scale: clamped to [10.0, 14.0] for stability.
+    """
+    if not features:
+        return base_guidance
+
+    total_weight = 0.0
+    feature_count = 0
+
+    for key, value in features.items():
+        if value and value != "None" and key in FEATURE_GUIDANCE_WEIGHTS:
+            total_weight += FEATURE_GUIDANCE_WEIGHTS[key]
+            feature_count += 1
+
+    if feature_count == 0:
+        return base_guidance
+
+    avg_weight = total_weight / feature_count
+    adjusted_guidance = base_guidance * avg_weight
+
+    # Clamp to stable range
+    return max(10.0, min(14.0, adjusted_guidance))
+
+
+def infer_mask_region_from_edit(edit_instruction: str) -> dict:
+    """Infer anatomical region from edit instruction text (Improvement 2.3).
+
+    Parses the edit instruction to suggest mask region, dilation, and buffer.
+    Returns a dict with 'region', 'dilate_px', and 'buffer' for UI to use.
+
+    Returns:
+        dict with keys:
+            - 'region': anatomical region name
+            - 'dilate_px': suggested dilation in pixels
+            - 'buffer': surrounding region to include
+            - 'confidence': 0.0-1.0 how confident the inference is
+    """
+    instruction_lower = edit_instruction.lower()
+
+    best_match = None
+    best_confidence = 0.0
+
+    for keyword, mapping in EDIT_REGION_MAPPING.items():
+        if keyword in instruction_lower:
+            # Confidence increases if keyword appears at start or is longer
+            confidence = min(1.0, 0.5 + (len(keyword) / 20.0))
+            if confidence > best_confidence:
+                best_confidence = confidence
+                best_match = mapping
+
+    if best_match:
+        return {
+            "region": best_match["region"],
+            "dilate_px": best_match["dilate_px"],
+            "buffer": best_match["buffer"],
+            "confidence": best_confidence,
+        }
+
+    # Default to full face if no match
+    return {
+        "region": "full_face",
+        "dilate_px": 0,
+        "buffer": "none",
+        "confidence": 0.0,
+    }
 
 
 def _build_narrative(features: dict[str, str], is_photo: bool) -> list[str]:
@@ -123,14 +309,19 @@ def _build_narrative(features: dict[str, str], is_photo: bool) -> list[str]:
     base_noun = f"{eth_str.strip()} {gender}" if eth_str.strip() else f"{gender}"
     sentence1 = f"of a {base_noun}, age {age}."
     
-    # Sentence 2: Structure
+    # Sentence 2: Structure (with ethnicity-specific anatomical grounding - Improvement 1.5)
     face_shape = features.get("Face shape", "")
     jawline = features.get("Jawline", "")
     struct_parts = []
     if skin and skin != "None": struct_parts.append(f"{skin.lower()} skin")
     if face_shape and face_shape != "None": struct_parts.append(f"an {face_shape.lower()} face shape")
     if jawline and jawline != "None": struct_parts.append(f"a {jawline.lower()} jawline")
-    
+
+    # Add ethnicity-specific anatomical descriptors for coherence
+    ethnicity_boost = _get_ethnicity_anatomical_boost(ethnicity)
+    if ethnicity_boost:
+        struct_parts.append(ethnicity_boost)
+
     sentence2 = f"{subject} features " + ", ".join(struct_parts) + "." if struct_parts else ""
 
     # Sentence 3: Eyes & Nose
@@ -187,11 +378,16 @@ def build_forensic_prompt(
     style: str = "Pencil sketch",
     extra_details: str = "",
 ) -> tuple[str, str]:
-    """Assemble a forensic-quality SD prompt from individual facial features."""
-    
+    """Assemble a forensic-quality SD prompt from individual facial features.
+
+    Incorporates:
+    - Ethnicity-specific anatomical grounding (Improvement 1.5)
+    - Adaptive guidance scale info in metadata (Improvement 1.3)
+    """
+
     # Generate grammatical narrative
     sentences = _build_narrative(features, is_photo=False)
-    
+
     # Prefix medium
     prompt = f"A highly detailed front facing {style.lower()} {sentences[0]} {' '.join(sentences[1:])}"
 
