@@ -179,6 +179,21 @@ st.markdown(
         border-bottom: 1px solid rgba(0, 0, 0, 0.05);
         padding-bottom: 0.6rem;
     }
+
+    /* ── Consistent Section Headings (Phase I / II, editing sub-sections) ── */
+    .section-heading {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #1C1C1E;
+        letter-spacing: -0.3px;
+        margin: 0 0 1rem 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .section-heading.muted {
+        color: #6E6E73;
+    }
     
     /* Override Streamlit's native st.container(border=True) to match our shadow system */
     [data-testid="stVerticalBlockBorderWrapper"] {
@@ -238,6 +253,21 @@ st.markdown(
         transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba(0,0,0,0.05), 0 12px 28px rgba(0,0,0,0.08);
         border-color: rgba(0, 0, 0, 0.08);
+    }
+    .variant-card-number {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #1C1C1E;
+        margin: 0 0 0.3rem 0;
+    }
+    .variant-card-seed {
+        color: #6E6E73;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.82rem;
+    }
+    .variant-card-seed span {
+        color: #F59E0B;
+        font-weight: 600;
     }
 
     /* ── Parameter Chips / Metadata Table ────────────────────────────── */
@@ -299,7 +329,7 @@ st.markdown(
         margin-bottom: 0.4rem;
     }
 
-    /* ── Success banner ──────────────────────────────────────────────── */
+    /* ── Status banners ──────────────────────────────────────────────── */
     .success-banner {
         background: #FFFFFF;
         border: 1px solid rgba(0,0,0,0.06);
@@ -361,10 +391,24 @@ st.markdown(
         color: #D97706; /* darker amber */
     }
 
-    /* ── Hide Streamlit branding ─────────────────────────────────────── */
+    /* ── Hide Streamlit branding only — keep the sidebar toggle visible ── */
+    /* We hide the Streamlit footer and the decorative header links,          */
+    /* but must NOT hide the entire <header> element because it contains      */
+    /* the sidebar collapse/expand button ([data-testid="stSidebarNavToggle"])  */
     #MainMenu { visibility: hidden; }
     footer { visibility: hidden; }
-    header { visibility: hidden; }
+    /* Hide only Streamlit's internal header toolbar items, not the whole bar */
+    header [data-testid="stToolbar"] { visibility: hidden; }
+    header [data-testid="stDecoration"] { display: none; }
+    /* Keep sidebar toggle (hamburger) fully clickable and visible */
+    [data-testid="stSidebarNavToggle"],
+    [data-testid="collapsedControl"],
+    button[kind="header"] {
+        visibility: visible !important;
+        display: flex !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+    }
     </style>
     """,
     unsafe_allow_html=True,
@@ -722,7 +766,7 @@ if st.session_state.v2_stage == "drafting" and st.session_state.v2_drafts:
         unsafe_allow_html=True,
     )
 
-    st.markdown("#### 🖌️ Phase I: Sketch Variants (Select one to edit)")
+    st.markdown('<div class="section-heading">🖌️ Phase I &mdash; Sketch Variants <span style="color:#6E6E73;font-weight:400;font-size:0.9rem;">· Select one to refine</span></div>', unsafe_allow_html=True)
     
     for idx, img in enumerate(st.session_state.v2_drafts):
         st.markdown('<div class="variant-card">', unsafe_allow_html=True)
@@ -732,10 +776,10 @@ if st.session_state.v2_stage == "drafting" and st.session_state.v2_drafts:
             st.image(img, use_container_width=True)
             
         with col_actions:
-            st.markdown(f"<h3 style='margin-bottom:0.2rem;color:#1C1C1E;'>Variation {idx+1}</h3>", unsafe_allow_html=True)
-            st.markdown("<span style='color:#64748b;font-family:\"JetBrains Mono\", monospace;font-size:0.85rem;'>Seed: <span style='color:#06b6d4;'>{}</span></span>".format(st.session_state.v2_draft_seeds[idx]), unsafe_allow_html=True)
+            st.markdown(f'<p class="variant-card-number">Variation {idx+1}</p>', unsafe_allow_html=True)
+            st.markdown(f'<p class="variant-card-seed">Seed&nbsp;<span>{st.session_state.v2_draft_seeds[idx]}</span></p>', unsafe_allow_html=True)
             
-            st.markdown("<br><br>", unsafe_allow_html=True)
+            st.markdown("<br>", unsafe_allow_html=True)
             if st.button(f"✅ Select Variation {idx+1}", key=f"select_v_{idx}", use_container_width=True, type="primary"):
                 st.session_state.v2_stage = "editing"
                 st.session_state.v2_selected_sketch = img
@@ -767,7 +811,7 @@ elif st.session_state.v2_stage == "editing" and st.session_state.v2_selected_ske
         unsafe_allow_html=True,
     )
 
-    st.markdown("#### ✏️ Phase I: Iterative Sketch Refinement")
+    st.markdown('<div class="section-heading">✏️ Phase I &mdash; Iterative Sketch Refinement</div>', unsafe_allow_html=True)
 
     # Show current sketch with Inpainting Canvas overlay
     from streamlit_drawable_canvas import st_canvas
@@ -820,7 +864,7 @@ elif st.session_state.v2_stage == "editing" and st.session_state.v2_selected_ske
             go_back = st.button("← Back to Drafts", use_container_width=True, key="back_to_drafts")
 
     with col_sketch:
-        st.markdown("<h4 style='color:#1C1C1E;font-weight:600;'>🖌️ Paint the area to edit</h4>", unsafe_allow_html=True)
+        st.markdown('<div class="section-heading">🖌️ Paint the area to edit</div>', unsafe_allow_html=True)
         
         bg_image = st.session_state.v2_selected_sketch
         
@@ -928,12 +972,12 @@ elif st.session_state.v2_stage == "rendering" and st.session_state.v2_selected_s
     col_sketch_final, col_photo = st.columns([2, 3], gap="large")
 
     with col_sketch_final:
-        st.markdown("<h4 style='color:#6E6E73;font-weight:600;'>🖌️ Finalized Sketch</h4>", unsafe_allow_html=True)
+        st.markdown('<div class="section-heading muted">🖌️ Finalized Sketch</div>', unsafe_allow_html=True)
         st.image(main_image, use_container_width=True)
         st.caption(f"*Seed {st.session_state.v2_selected_seed}  ·  {len(st.session_state.v2_edit_history)} edit(s)*")
 
     with col_photo:
-        st.markdown("<h4 style='color:#1C1C1E;font-weight:700;'>📸 Photorealistic Phase II Refinement</h4>", unsafe_allow_html=True)
+        st.markdown('<div class="section-heading">📸 Phase II &mdash; Photorealistic Refinement</div>', unsafe_allow_html=True)
         with st.spinner("🤖 SDXL-ControlNet Refinement — Generating Photorealistic Output …"):
             # Clear VRAM before Phase II to ensure maximum headroom
             if torch.cuda.is_available():
