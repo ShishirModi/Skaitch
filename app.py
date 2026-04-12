@@ -404,12 +404,28 @@ st.markdown(
     header [data-testid="stDecoration"] { display: none; }
     /* Keep sidebar toggle (hamburger) fully clickable and visible */
     [data-testid="stSidebarNavToggle"],
-    [data-testid="collapsedControl"],
     button[kind="header"] {
         visibility: visible !important;
         display: flex !important;
         opacity: 1 !important;
         pointer-events: auto !important;
+    }
+    /* ── Collapsed sidebar re-open button ─────────────────────────────── */
+    /* This button appears in the top-left when the sidebar is collapsed.   */
+    /* Ensure it is always on top and never hidden by overlapping content.  */
+    [data-testid="collapsedControl"] {
+        visibility: visible !important;
+        display: flex !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        position: fixed !important;
+        top: 0.5rem !important;
+        left: 0.5rem !important;
+        z-index: 999999 !important;
+        background: #FFFFFF !important;
+        border: 1px solid rgba(0,0,0,0.1) !important;
+        border-radius: 8px !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
     }
     </style>
     """,
