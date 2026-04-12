@@ -67,14 +67,30 @@ def load_codeformer_models():
 
     return _face_helper, _codeformer_net
 
+# §1.5 (face_restoration.py line 76) fix: Cache the inference device once
+# instead of re-evaluating it on every call.
+_INFERENCE_DEVICE = None
+
+def _get_inference_device() -> torch.device:
+    """Return cached inference device (§1.5 device-caching fix)."""
+    global _INFERENCE_DEVICE
+    if _INFERENCE_DEVICE is None:
+        _INFERENCE_DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    return _INFERENCE_DEVICE
+
+
 def run_codeformer(img_pil: Image.Image, fidelity: float = 0.5) -> Image.Image:
     """
     Apply CodeFormer restoration to a PIL image.
     fidelity: 0.0 (max restoration) to 1.0 (max fidelity to original).
+
+    §4.4 fix: Adds a face-detection gate. If no faces are detected, the
+    original image is returned with a diagnostic message instead of silently
+    failing or returning a black image from paste_faces_to_input_image().
     """
     helper, net = load_codeformer_models()
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    
+    device = _get_inference_device()
+
     try:
         # Move models to GPU explicitly for inference
         if device.type == "cuda":
@@ -85,49 +101,72 @@ def run_codeformer(img_pil: Image.Image, fidelity: float = 0.5) -> Image.Image:
                 helper.face_parse.to(device)
             # Ensure the helper's internal device is updated
             helper.device = device
-        
+
         from basicsr.utils import img2tensor, tensor2img
-        
+
         # Convert PIL to CV2 (BGR)
         img_cv = cv2.cvtColor(np.array(img_pil), cv2.COLOR_RGB2BGR)
-        
+
         # Clean previous faces
         helper.clean_all()
         helper.read_image(img_cv)
-        
+
         # Detect and align faces
         helper.get_face_landmarks_5(only_center_face=False, resize=640, eye_dist_threshold=5)
+
+        # ── §4.4 fix: Face detection gate ─────────────────────────────────
+        # If no faces are detected (unusual compositions, very abstract sketches),
+        # return the original immediately with a diagnostic print instead of
+        # proceeding to paste_faces_to_input_image() with zero faces, which can
+        # return a black image or raise an unhandled exception.
+        det_faces = getattr(helper, 'det_faces', None)
+        has_detections = False
+        if det_faces is not None:
+            if hasattr(det_faces, '__len__'):
+                has_detections = len(det_faces) > 0
+            elif hasattr(det_faces, 'any'):
+                has_detections = bool(det_faces.any())
+
+        if not has_detections:
+            print("⚠️ CodeFormer: No faces detected — returning original image unchanged.")
+            return img_pil
+
         helper.align_warp_face()
-        
+
+        # ── §4.4 fix: Secondary gate after alignment ─────────────────────
+        if not helper.cropped_faces:
+            print("⚠️ CodeFormer: Face alignment produced no crops — returning original.")
+            return img_pil
+
         # Restore each face
         for cropped_face in helper.cropped_faces:
             # Prepare tensor correctly and move to device
             face_t = img2tensor(cropped_face / 255., bgr2rgb=True, float32=True)
             face_t = face_t.unsqueeze(0).to(device)
-            
-            # Cast to the same dtype as the model weights (usually float16 or float32)
-            # CodeFormer usually runs in float32 for stability
+
+            # Cast to the same dtype as the model weights
             face_t = face_t.to(dtype=next(net.parameters()).dtype)
-            
+
             with torch.no_grad():
                 output = net(face_t, w=fidelity, adain=True)[0]
                 restored_face = tensor2img(output, rgb2bgr=True, min_max=(0, 1))
-            
+
             restored_face = restored_face.astype('uint8')
             helper.add_restored_face(restored_face)
-        
+
         # Paste faces back into image
         helper.get_inverse_affine(None)
         restored_img = helper.paste_faces_to_input_image()
-        
+
         # Convert back to PIL
         return Image.fromarray(cv2.cvtColor(restored_img, cv2.COLOR_BGR2RGB))
-        
+
     finally:
-        # Prevent VRAM Leak: Move models back to CPU 
+        # Prevent VRAM Leak: Move models back to CPU
         if device.type == "cuda":
             net = net.to("cpu")
-            helper.face_det = helper.face_det.to("cpu")
+            if hasattr(helper, 'face_det') and helper.face_det is not None:
+                helper.face_det = helper.face_det.to("cpu")
             if hasattr(helper, 'face_parse') and helper.face_parse is not None:
                 helper.face_parse = helper.face_parse.to("cpu")
             torch.cuda.empty_cache()

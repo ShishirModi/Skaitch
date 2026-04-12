@@ -175,18 +175,25 @@ def compute_pixel_difference_magnitude(image1: Image.Image, image2: Image.Image)
 def adaptive_difference_blending(
     original: Image.Image,
     edited: Image.Image,
-    max_change_factor: float = 0.6,
+    max_change_factor: float = 0.85,
 ) -> Image.Image:
     """Blend original and edited images based on change magnitude.
 
-    If edits deviate too much from the original (suggesting user error or hallucination),
-    reduce their strength. This prevents cascading edits from drifting too far.
+    §2.3 fix: The original formula computed change_factor = 1.0 - clip(diff, 0, 0.6),
+    which meant large deliberate edits (high diff) got a LOW change_factor (≥0.4),
+    keeping mostly the original. After 3-4 iterations, cumulative suppression
+    compounded and the sketch drifted back to the original despite deliberate changes.
+
+    The new formula uses a soft sigmoid-style curve: moderate changes pass through
+    mostly intact, while only extreme outlier changes (>max_change_factor) are
+    attenuated. This preserves deliberate structural edits while still preventing
+    catastrophic hallucination drift.
 
     Args:
         original: Original sketch image.
         edited: Edited output from inpainting.
-        max_change_factor: Maximum allowed change ratio (0.0-1.0).
-                          If edit differs by > this, blend conservatively.
+        max_change_factor: Threshold above which changes are attenuated (0.0-1.0).
+                          Default raised from 0.6 to 0.85 to preserve structural edits.
 
     Returns:
         Blended image as PIL Image.
@@ -198,21 +205,28 @@ def adaptive_difference_blending(
     diff_map = compute_pixel_difference_magnitude(original, edited)
     diff_normalized = diff_map / 255.0
 
-    # Compute adaptive blending factor: high change = more conservative
-    # change_factor represents how much of the edit to keep
-    change_factor = 1.0 - np.clip(diff_normalized, 0, max_change_factor)
+    # §2.3 fix: Soft attenuation curve — changes below threshold pass through
+    # at full strength; changes above are smoothly attenuated rather than
+    # hard-clipped. This preserves 85%+ of deliberate structural edits.
+    # keep_factor: 1.0 where diff < threshold, smoothly decreasing above.
+    keep_factor = np.where(
+        diff_normalized <= max_change_factor,
+        np.ones_like(diff_normalized),
+        max_change_factor / (diff_normalized + 1e-6)
+    )
+    keep_factor = np.clip(keep_factor, 0.4, 1.0)  # floor at 40% to avoid total suppression
 
     # Expand to 3D for RGB blending
     if len(orig_np.shape) == 3:
-        change_factor = np.stack([change_factor] * 3, axis=-1)
+        keep_factor = np.stack([keep_factor] * 3, axis=-1)
 
-    # Blend: result = original * (1 - change_factor) + edited * change_factor
-    blended = orig_np * (1 - change_factor) + edited_np * change_factor
+    # Blend: result = original * (1 - keep_factor) + edited * keep_factor
+    blended = orig_np * (1 - keep_factor) + edited_np * keep_factor
 
     # Clip and convert back to uint8
     blended = (np.clip(blended, 0, 1) * 255).astype(np.uint8)
 
-    return Image.fromarray(blended.astype(np.uint8))
+    return Image.fromarray(blended)
 
 
 def compute_adaptive_inpaint_strength(

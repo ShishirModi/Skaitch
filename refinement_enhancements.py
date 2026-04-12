@@ -11,38 +11,46 @@ from typing import Dict, Tuple, Optional
 
 # ─── Improvement 3.1: Adaptive ControlNet Conditioning Scale ──────────────────
 
-def compute_edge_contrast(canny_image: np.ndarray) -> float:
-    """Compute edge contrast/sharpness from Canny output.
+def compute_edge_contrast(edge_image: np.ndarray) -> float:
+    """Compute edge contrast/sharpness from edge detection output.
 
-    High contrast = sharp, well-defined edges (allow stricter geometry adherence).
-    Low contrast = soft, blended edges (allow more photorealistic freedom).
+    §3.2 fix: The original implementation assumed a binary Canny image (0 or 255).
+    However, fused_edge_detection() returns a weighted-sum float image with a broad
+    range of grey values. The formula now handles both binary and continuous edge maps
+    by normalizing the variance computation and using mean edge intensity instead of
+    raw variance, which was systematically low on non-binary inputs.
 
     Args:
-        canny_image: Output from cv2.Canny() (0-255, binary or near-binary).
+        edge_image: Edge detection output (0-255, binary or continuous grayscale).
 
     Returns:
         contrast_score: 0.0-1.0 where 1.0 = maximum edge clarity.
     """
-    # Canny returns edges as 255, background as 0
-    edge_pixels = np.sum(canny_image > 0)
-    total_pixels = canny_image.size
-
+    total_pixels = edge_image.size
     if total_pixels == 0:
         return 0.5
 
+    # Threshold-independent edge detection: any pixel > 10 is an edge
+    edge_mask = edge_image > 10
+    edge_pixels = np.sum(edge_mask)
     edge_ratio = edge_pixels / total_pixels
 
-    # Compute variance of edge pixels (sharpness indicator)
-    edges_only = canny_image[canny_image > 0]
+    edges_only = edge_image[edge_mask].astype(np.float32)
     if len(edges_only) > 0:
-        variance = np.var(edges_only) / 255.0
+        # §3.2 fix: Use normalized mean intensity as sharpness proxy.
+        # For binary images (Canny), mean ≈ 255 → high score.
+        # For continuous images (fused), mean reflects edge strength.
+        mean_intensity = np.mean(edges_only) / 255.0
+        # Variance normalized to [0, 1] range for continuous images
+        variance = np.var(edges_only) / (255.0 * 255.0)
+        sharpness = mean_intensity * 0.7 + (1.0 - variance) * 0.3
     else:
-        variance = 0.0
+        sharpness = 0.0
 
-    # Combine edge ratio and variance for contrast score
-    contrast_score = (edge_ratio * 0.4 + variance * 0.6)
+    # Combine edge coverage and sharpness
+    contrast_score = edge_ratio * 0.4 + sharpness * 0.6
 
-    return np.clip(contrast_score, 0.0, 1.0)
+    return float(np.clip(contrast_score, 0.0, 1.0))
 
 
 def compute_adaptive_controlnet_scale(

@@ -91,11 +91,14 @@ SKETCH_STYLES = [
 
 # ─── Negative Prompt ──────────────────────────────────────────────────────────
 
+# §1.4 fix: Removed "color photograph" from negative prompt. It contradicted the
+# positive prompt's "photorealistic pencil rendering" token, creating a semantic
+# tug-of-war that caused inconsistent sketch vs. semi-realistic outputs.
 FORENSIC_NEGATIVE = (
-    "color photograph, oil painting, cartoon, anime, 3d render, CGI, watercolor, "
+    "oil painting, cartoon, anime, 3d render, CGI, watercolor, "
     "blurry, low quality, low resolution, pixelated, distorted face, asymmetric face, "
     "extra fingers, deformed features, watermark, signature, text, frame, border, "
-    "background clutter, multiple people, jewelry"
+    "background clutter, multiple people, jewelry, colored skin, color image"
 )
 
 # ─── Recommended Defaults ────────────────────────────────────────────────────
@@ -141,52 +144,56 @@ ETHNICITY_ANATOMICAL_DESCRIPTORS = {
 }
 
 # ─── Improvement 2.3: Prompt-Based Mask Region Inference ────────────────────────
-# Maps edit verbs/nouns to anatomical regions for auto-mask suggestions
-EDIT_REGION_MAPPING = {
-    # Nose edits
-    "nose": {"region": "nose", "dilate_px": 25, "buffer": "cheeks_forehead"},
-    "nostr": {"region": "nose", "dilate_px": 25, "buffer": "cheeks_forehead"},
-    "bridge": {"region": "nose", "dilate_px": 20, "buffer": "cheeks_forehead"},
-    "tip": {"region": "nose", "dilate_px": 15, "buffer": "cheeks_forehead"},
-    "sharper": {"region": "nose", "dilate_px": 30, "buffer": "cheeks_forehead"},
-    "wider": {"region": "nose", "dilate_px": 35, "buffer": "cheeks"},
-    "narrower": {"region": "nose", "dilate_px": 25, "buffer": "cheeks"},
-    "pointed": {"region": "nose", "dilate_px": 20, "buffer": "cheeks_forehead"},
-    "aquiline": {"region": "nose", "dilate_px": 25, "buffer": "cheeks_forehead"},
+# Maps edit verbs/nouns to anatomical regions for auto-mask suggestions.
+#
+# §2.5 fix: Replaced flat dict (which silently dropped duplicate keys like "wider")
+# with a list-of-tuples structure. Each entry is (keyword, mapping). This preserves
+# all mappings and allows context-aware disambiguation in infer_mask_region_from_edit().
+EDIT_REGION_MAPPING = [
+    # Nose edits — high-priority compound phrases listed FIRST so they match before
+    # the ambiguous single-word entries.
+    ("nose wider", {"region": "nose", "dilate_px": 35, "buffer": "cheeks"}),
+    ("nose narrower", {"region": "nose", "dilate_px": 25, "buffer": "cheeks"}),
+    ("nose", {"region": "nose", "dilate_px": 25, "buffer": "cheeks_forehead"}),
+    ("nostr", {"region": "nose", "dilate_px": 25, "buffer": "cheeks_forehead"}),
+    ("bridge", {"region": "nose", "dilate_px": 20, "buffer": "cheeks_forehead"}),
+    ("sharper", {"region": "nose", "dilate_px": 30, "buffer": "cheeks_forehead"}),
+    ("pointed", {"region": "nose", "dilate_px": 20, "buffer": "cheeks_forehead"}),
+    ("aquiline", {"region": "nose", "dilate_px": 25, "buffer": "cheeks_forehead"}),
 
     # Jawline edits
-    "jaw": {"region": "jaw", "dilate_px": 40, "buffer": "cheeks_neck"},
-    "jawline": {"region": "jaw", "dilate_px": 40, "buffer": "cheeks_neck"},
-    "chin": {"region": "jaw", "dilate_px": 35, "buffer": "neck"},
-    "stronger": {"region": "jaw", "dilate_px": 45, "buffer": "cheeks_neck"},
-    "weaker": {"region": "jaw", "dilate_px": 35, "buffer": "cheeks_neck"},
+    ("jawline", {"region": "jaw", "dilate_px": 40, "buffer": "cheeks_neck"}),
+    ("jaw", {"region": "jaw", "dilate_px": 40, "buffer": "cheeks_neck"}),
+    ("chin", {"region": "jaw", "dilate_px": 35, "buffer": "neck"}),
+    ("stronger", {"region": "jaw", "dilate_px": 45, "buffer": "cheeks_neck"}),
+    ("weaker", {"region": "jaw", "dilate_px": 35, "buffer": "cheeks_neck"}),
 
     # Eye edits
-    "eye": {"region": "eyes", "dilate_px": 30, "buffer": "eyebrows_cheeks"},
-    "eyes": {"region": "eyes", "dilate_px": 30, "buffer": "eyebrows_cheeks"},
-    "color": {"region": "eyes", "dilate_px": 20, "buffer": "none"},
-    "iris": {"region": "eyes", "dilate_px": 15, "buffer": "none"},
-    "wider": {"region": "eyes", "dilate_px": 35, "buffer": "eyebrows_cheeks"},
-    "larger": {"region": "eyes", "dilate_px": 35, "buffer": "eyebrows_cheeks"},
-    "smaller": {"region": "eyes", "dilate_px": 25, "buffer": "eyebrows_cheeks"},
+    ("eyes wider", {"region": "eyes", "dilate_px": 35, "buffer": "eyebrows_cheeks"}),
+    ("eye wider", {"region": "eyes", "dilate_px": 35, "buffer": "eyebrows_cheeks"}),
+    ("eyes", {"region": "eyes", "dilate_px": 30, "buffer": "eyebrows_cheeks"}),
+    ("eye", {"region": "eyes", "dilate_px": 30, "buffer": "eyebrows_cheeks"}),
+    ("iris", {"region": "eyes", "dilate_px": 15, "buffer": "none"}),
+    ("larger", {"region": "eyes", "dilate_px": 35, "buffer": "eyebrows_cheeks"}),
+    ("smaller", {"region": "eyes", "dilate_px": 25, "buffer": "eyebrows_cheeks"}),
 
     # Mouth edits
-    "mouth": {"region": "mouth", "dilate_px": 25, "buffer": "chin"},
-    "lips": {"region": "mouth", "dilate_px": 25, "buffer": "chin"},
-    "fuller": {"region": "mouth", "dilate_px": 30, "buffer": "chin"},
-    "thinner": {"region": "mouth", "dilate_px": 20, "buffer": "chin"},
+    ("mouth", {"region": "mouth", "dilate_px": 25, "buffer": "chin"}),
+    ("lips", {"region": "mouth", "dilate_px": 25, "buffer": "chin"}),
+    ("fuller", {"region": "mouth", "dilate_px": 30, "buffer": "chin"}),
+    ("thinner", {"region": "mouth", "dilate_px": 20, "buffer": "chin"}),
 
     # Hair edits
-    "hair": {"region": "hair", "dilate_px": 60, "buffer": "forehead"},
-    "style": {"region": "hair", "dilate_px": 60, "buffer": "forehead"},
+    ("hairstyle", {"region": "hair", "dilate_px": 60, "buffer": "forehead"}),
+    ("hair", {"region": "hair", "dilate_px": 60, "buffer": "forehead"}),
 
     # Cheek edits
-    "cheek": {"region": "cheeks", "dilate_px": 40, "buffer": "eyes_jaw"},
-    "cheeks": {"region": "cheeks", "dilate_px": 40, "buffer": "eyes_jaw"},
+    ("cheeks", {"region": "cheeks", "dilate_px": 40, "buffer": "eyes_jaw"}),
+    ("cheek", {"region": "cheeks", "dilate_px": 40, "buffer": "eyes_jaw"}),
 
     # Forehead edits
-    "forehead": {"region": "forehead", "dilate_px": 35, "buffer": "hair"},
-}
+    ("forehead", {"region": "forehead", "dilate_px": 35, "buffer": "hair"}),
+]
 
 # ─── Feature Complexity Weights for Adaptive Guidance (Improvement 1.3) ───────
 FEATURE_GUIDANCE_WEIGHTS = {
@@ -254,8 +261,10 @@ def compute_adaptive_guidance_scale(features: dict[str, str], base_guidance: flo
 def infer_mask_region_from_edit(edit_instruction: str) -> dict:
     """Infer anatomical region from edit instruction text (Improvement 2.3).
 
-    Parses the edit instruction to suggest mask region, dilation, and buffer.
-    Returns a dict with 'region', 'dilate_px', and 'buffer' for UI to use.
+    §2.5 fix: Uses list-of-tuples EDIT_REGION_MAPPING (no duplicate-key loss)
+    with word-boundary-aware matching via regex. Compound phrases like
+    "nose wider" are checked before single words, and \b boundaries prevent
+    spurious matches (e.g. "machine" no longer matches "chin").
 
     Returns:
         dict with keys:
@@ -264,15 +273,19 @@ def infer_mask_region_from_edit(edit_instruction: str) -> dict:
             - 'buffer': surrounding region to include
             - 'confidence': 0.0-1.0 how confident the inference is
     """
+    import re
     instruction_lower = edit_instruction.lower()
 
     best_match = None
     best_confidence = 0.0
 
-    for keyword, mapping in EDIT_REGION_MAPPING.items():
-        if keyword in instruction_lower:
-            # Confidence increases if keyword appears at start or is longer
-            confidence = min(1.0, 0.5 + (len(keyword) / 20.0))
+    for keyword, mapping in EDIT_REGION_MAPPING:
+        # §2.5 fix: Use word boundaries to avoid substring false positives
+        # (e.g. "machine" should NOT match "chin").
+        pattern = r'\b' + re.escape(keyword) + r'\b'
+        if re.search(pattern, instruction_lower):
+            # Compound phrases (more words / longer strings) get higher confidence
+            confidence = min(1.0, 0.5 + (len(keyword) / 15.0))
             if confidence > best_confidence:
                 best_confidence = confidence
                 best_match = mapping
@@ -407,14 +420,55 @@ def build_forensic_prompt(
 
     return prompt, FORENSIC_NEGATIVE
 
+# ─── §1.3 fix: Token count guard ────────────────────────────────────────────
+# SDXL's CLIP encoders truncate at 77 tokens per encoder. Prompts routinely
+# exceed this limit when many features are selected, silently dropping the
+# last tokens (often the distinguishing marks and quality boosters appended
+# at the end — ironic given their importance). This function estimates the
+# token count and trims low-priority suffixes to stay within budget.
+_SDXL_TOKEN_LIMIT = 75  # leave 2-token margin for BOS/EOS
+
+def _estimate_token_count(text: str) -> int:
+    """Rough CLIP token estimate: ~0.75 tokens per word, commas as separators."""
+    words = text.replace(",", " ").split()
+    return max(1, int(len(words) * 0.75))
+
+def _trim_prompt_to_budget(prompt: str, budget: int = _SDXL_TOKEN_LIMIT) -> str:
+    """Trim prompt from the END (lowest-priority tokens) to fit within budget.
+
+    §1.3 fix: Quality boosters are now prepended before extra_details so they
+    are not the first to be truncated. This function trims only if the prompt
+    exceeds the budget, removing trailing comma-separated phrases.
+    """
+    if _estimate_token_count(prompt) <= budget:
+        return prompt
+    # Split on comma-separated phrases and rebuild until budget is reached
+    parts = [p.strip() for p in prompt.split(",") if p.strip()]
+    trimmed = []
+    running_count = 0
+    for part in parts:
+        part_tokens = _estimate_token_count(part)
+        if running_count + part_tokens > budget:
+            break
+        trimmed.append(part)
+        running_count += part_tokens
+    return ", ".join(trimmed)
+
+
 def build_sdxl_forensic_prompt(
     features: dict[str, str],
     style: str = "Pencil sketch",
     extra_details: str = "",
 ) -> tuple[str, str]:
-    """Wrapper that calls build_forensic_prompt and appends SDXL boosters."""
+    """Wrapper that calls build_forensic_prompt and appends SDXL boosters.
+
+    §1.3 fix: Quality boosters are appended BEFORE extra_details so they survive
+    token truncation, and the final prompt is trimmed to the CLIP token budget.
+    """
     prompt, neg = build_forensic_prompt(features, style, extra_details)
-    return prompt + ", best quality, masterpiece, highly detailed face", neg
+    prompt = prompt + ", best quality, masterpiece, highly detailed face"
+    prompt = _trim_prompt_to_budget(prompt)
+    return prompt, neg
 
 
 def build_refinement_prompt(

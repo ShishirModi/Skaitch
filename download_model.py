@@ -18,12 +18,30 @@ CODEFORMER_DIR = os.path.join(os.path.dirname(__file__), "external", "CodeFormer
 CONTROLNET_MODEL_ID = "diffusers/controlnet-canny-sdxl-1.0"
 CONTROLNET_OUTPUT_DIR = os.path.join(BASE_MODELS_DIR, "controlnet-canny-sdxl")
 
-def is_model_downloaded(directory):
+def is_model_downloaded(directory, min_files=3, min_total_bytes=1_000_000):
+    """Check whether a model directory contains a valid, complete download.
+
+    §3.7 fix: The original check only verified that the directory had >2 files,
+    which passes for partial/corrupted downloads. Now we also verify minimum
+    total file size to catch truncated downloads (e.g. interrupted snapshot_download).
+
+    Args:
+        directory: Path to the model directory.
+        min_files: Minimum number of files expected.
+        min_total_bytes: Minimum total size in bytes (default 1 MB).
+    """
     if not os.path.exists(directory):
         return False
-    # Check if directory contains at least a few files
     files = os.listdir(directory)
-    return len(files) > 2
+    if len(files) < min_files:
+        return False
+    # §3.7 fix: Verify total size to catch partial downloads
+    total_size = sum(
+        os.path.getsize(os.path.join(directory, f))
+        for f in files
+        if os.path.isfile(os.path.join(directory, f))
+    )
+    return total_size >= min_total_bytes
 
 def check_and_download_controlnet():
     """Downloads the SDXL Canny ControlNet weights to the NVMe drive."""
