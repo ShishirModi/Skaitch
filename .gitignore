@@ -13,6 +13,8 @@ __pycache__/
 *.pt
 *.pth
 *.bin
+models/
+data/raw/
 
 # Ignore external models
 external/
