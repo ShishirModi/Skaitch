@@ -5,11 +5,37 @@ import subprocess
 def download_cufs(output_dir):
     cufs_dir = os.path.join(output_dir, "CUFS")
     os.makedirs(cufs_dir, exist_ok=True)
-    print("[INFO] Attempting to download CUFS dataset via Kaggle...")
     try:
-        # Tries to use kaggle CLI if available
-        subprocess.run(["kaggle", "datasets", "download", "-d", "arbazhussain/cuhk-face-sketch-database-cufs", "-p", cufs_dir, "--unzip"], check=True)
-        print(f"[SUCCESS] CUFS downloaded and extracted to {cufs_dir}")
+        # Instead of shelling out to the kaggle CLI which often has PATH issues, use the native python kagglehub library
+        import kagglehub
+        import shutil
+        
+        print("[INFO] Attempting to download CUFS dataset via kagglehub...")
+        path = kagglehub.dataset_download("arbazhussain/cuhk-face-sketch-database-cufs")
+        print(f"[SUCCESS] Dataset cached at: {path}")
+        
+        # Copy from kagglehub cache to our defined cufs_dir
+        for item in os.listdir(path):
+            s = os.path.join(path, item)
+            d = os.path.join(cufs_dir, item)
+            if os.path.isdir(s):
+                if not os.path.exists(d):
+                    shutil.copytree(s, d)
+            else:
+                if not os.path.exists(d):
+                    shutil.copy2(s, d)
+        print(f"[SUCCESS] CUFS extracted and moved to {cufs_dir}")
+        
+    except ImportError:
+        print("[WARNING] 'kagglehub' module not found. Falling back to Kaggle CLI...")
+        try:
+            subprocess.run(["kaggle", "datasets", "download", "-d", "arbazhussain/cuhk-face-sketch-database-cufs", "-p", cufs_dir, "--unzip"], check=True)
+            print(f"[SUCCESS] CUFS downloaded and extracted to {cufs_dir}")
+        except Exception as e:
+            print(f"[ERROR] Automated download for CUFS failed: {e}")
+            print("Please manually download from Kaggle (arbazhussain/cuhk-face-sketch-database-cufs) or MMLAB.")
+            print(f"Extract contents to: {cufs_dir}")
+            
     except Exception as e:
         print(f"[WARNING] Automated download for CUFS failed: {e}")
         print("Please manually download from Kaggle (arbazhussain/cuhk-face-sketch-database-cufs) or MMLAB.")
