@@ -118,11 +118,15 @@ def run_sketch_edit(
         output_type="pil",
     ).images[0]
 
-    # ── Mask-based compositing (§2.1 fix) ─────────────────────────────────────
-    # Since Img2Img regenerates the full image, we composite using the feathered
-    # mask so that only the masked region is replaced and unmasked areas are
-    # mathematically preserved from the original.
-    result = _composite_with_mask(sketch_pil, result, mask_feathered)
+    # ── Mask-based compositing & Graduated Strength (§2.1 / §2.4 fix) ─────────
+    # We apply the graduated strength map directly to implement true graduated
+    # blending instead of a hard feathered mask composite.
+    from inpaint_enhancements import apply_graduated_strength_to_image
+    result = apply_graduated_strength_to_image(
+        image_pil=result,
+        original_pil=sketch_pil,
+        strength_map=enhanced["strength_map"]
+    )
 
     # ── Adaptive difference blending (§2.3 fix) ──────────────────────────────
     # max_change_factor=0.65: tightened from 0.85 to suppress wild deformations

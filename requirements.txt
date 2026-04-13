@@ -20,3 +20,7 @@ streamlit-drawable-canvas==0.9.3
 
 # Note: Photorealistic Refinement (Phase 2) is automatically initialized via SDXL ControlNet
 # and runs on native PyTorch/Diffusers. All weights are fetched to NVMe automatically.
+mtcnn
+# Optional: dlib (not strictly required if mtcnn works, but available as fallback)
+dlib
+kaggle

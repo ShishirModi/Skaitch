@@ -28,12 +28,22 @@ def load_refinement_pipeline():
         if _refinement_pipe is None:
             device = "cuda" if torch.cuda.is_available() else "cpu"
 
-            # 1. Load ControlNet
-            controlnet = ControlNetModel.from_pretrained(
-                CONTROLNET_PATH,
-                torch_dtype=torch.float16,
-                use_safetensors=True
-            )
+            # 1. Load Custom ControlNet (Sketch Conditioned)
+            cn_sketch_path = os.path.join(BASE_MODELS_DIR, "controlnet_sketch.safetensors")
+            if os.path.exists(cn_sketch_path):
+                controlnet = ControlNetModel.from_single_file(
+                    cn_sketch_path,
+                    torch_dtype=torch.float16,
+                    use_safetensors=True
+                )
+                print(f"Loaded custom Sketch ControlNet: {cn_sketch_path}")
+            else:
+                # Fallback to canny edge model if custom sketch controlnet isn't materialized yet
+                controlnet = ControlNetModel.from_pretrained(
+                    CONTROLNET_PATH,
+                    torch_dtype=torch.float16,
+                    use_safetensors=True
+                )
 
             # 2. Load SDXL with ControlNet
             pipe = StableDiffusionXLControlNetPipeline.from_pretrained(
@@ -42,6 +52,15 @@ def load_refinement_pipeline():
                 torch_dtype=torch.float16,
                 use_safetensors=True
             )
+
+            # Phase II LoRA fallback inference injection (optional but recommended for consistency)
+            lora_path = os.path.join(BASE_MODELS_DIR, "skaitch_lora.safetensors")
+            if os.path.exists(lora_path):
+                try:
+                    pipe.load_lora_weights(lora_path)
+                    print(f"Loaded Phase II LoRA: {lora_path}")
+                except Exception as e:
+                    print(f"Warning: Failed to load LoRA {lora_path} in refinement: {e}")
 
             # Enable memory offloading instead of a full .to(device)
             if device == "cuda":

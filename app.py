@@ -499,6 +499,54 @@ CODEFORMER_PATH = os.path.join(BASE_MODELS_DIR, "codeformer")
 @st.cache_resource(show_spinner="Verifying models on NVMe... (may take minutes on first run)")
 def ensure_models_exist():
     download_model.check_and_download_models()
+    
+    # Auto-check for Domain-Specialized Pipeline Weights
+    lora_path = os.path.join(BASE_MODELS_DIR, "skaitch_lora.safetensors")
+    controlnet_path = os.path.join(BASE_MODELS_DIR, "controlnet_sketch.safetensors")
+    
+    missing_training = []
+    if not os.path.exists(lora_path):
+        missing_training.append("LoRA")
+    if not os.path.exists(controlnet_path):
+        missing_training.append("ControlNet")
+        
+    if missing_training:
+        msg = f"⚠️ Missing custom models: {', '.join(missing_training)}. Initiating automated training pipelines..."
+        print(msg)
+        try:
+            st.warning(msg)
+        except: pass
+        import subprocess
+        script_dir = os.path.join(os.path.dirname(__file__), "scripts")
+        
+        try:
+            print("Running Data Provisioning Engine...")
+            try: st.toast("Downloading datasets...")
+            except: pass
+            subprocess.run(["python", os.path.join(script_dir, "download_datasets.py")], check=True)
+            
+            print("Running Synthetic Preprocessing...")
+            try: st.toast("Preprocessing image pairs...")
+            except: pass
+            subprocess.run(["python", os.path.join(script_dir, "preprocess.py")], check=True)
+            
+            if "LoRA" in missing_training:
+                print("Initiating LoRA Training Script... (Check terminal output for progress)")
+                try: st.toast("Initiating LoRA Training (~3 hrs)... Check terminal.")
+                except: pass
+                subprocess.run(["python", os.path.join(script_dir, "train_lora.py")], check=True)
+                
+            if "ControlNet" in missing_training:
+                print("Initiating ControlNet Training Script... (Check terminal output for progress)")
+                try: st.toast("Initiating custom ControlNet Training (~24 hrs)... Check terminal.")
+                except: pass
+                subprocess.run(["python", os.path.join(script_dir, "train_controlnet.py")], check=True)
+                
+        except Exception as e:
+            print(f"Error during automated training pipeline: {e}")
+            try: st.error(f"Training interrupted: {e}")
+            except: pass
+            
     return True
 
 # Bypass Streamlit cache wrapping which corrupts accelerate hooks.
@@ -519,6 +567,15 @@ def load_pipeline():
                     torch_dtype=torch.float16,
                     use_safetensors=True
                 )
+                # Phase I LoRA inference injection
+                lora_path = os.path.join(BASE_MODELS_DIR, "skaitch_lora.safetensors")
+                if os.path.exists(lora_path):
+                    try:
+                        pipe.load_lora_weights(lora_path)
+                        print(f"Loaded Phase I LoRA: {lora_path}")
+                    except Exception as e:
+                        print(f"Warning: Failed to load LoRA {lora_path}: {e}")
+
                 if torch.cuda.is_available():
                     # Use model-level CPU offloading to save VRAM on T4
                     pipe.enable_model_cpu_offload()

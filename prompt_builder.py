@@ -404,19 +404,22 @@ def build_forensic_prompt(
     # Prefix medium
     prompt = f"A highly detailed front facing {style.lower()} {sentences[0]} {' '.join(sentences[1:])}"
 
-    # Style tokens for quality
-    quality_tokens = (
-        "front-facing portrait, centered composition, white background, "
-        "ultra-high detail, sharp facial lines, professional forensic composite, "
-        "photorealistic pencil rendering, 8k resolution, studio lighting, "
-        "criminal investigation, legal evidence accuracy"
+    # Style narrative for quality (replacing tag-based prompting)
+    quality_narrative = (
+        " This is a professional forensic composite sketch featuring an ultra-high detail, "
+        "photorealistic pencil rendering with sharp facial lines. The composition is a "
+        "centered, front-facing portrait set against a white background for criminal investigation."
     )
 
-    prompt = prompt + ", " + quality_tokens
+    prompt = prompt + quality_narrative
 
     # Extra details from user
     if extra_details.strip():
-        prompt += ", " + extra_details.strip()
+        # Ensure extra details read naturally if possible
+        if not extra_details.strip().startswith((' ', '.', ',')):
+            prompt += " " + extra_details.strip()
+        else:
+            prompt += extra_details.strip()
 
     return prompt, FORENSIC_NEGATIVE
 
@@ -460,13 +463,10 @@ def build_sdxl_forensic_prompt(
     style: str = "Pencil sketch",
     extra_details: str = "",
 ) -> tuple[str, str]:
-    """Wrapper that calls build_forensic_prompt and appends SDXL boosters.
-
-    §1.3 fix: Quality boosters are appended BEFORE extra_details so they survive
-    token truncation, and the final prompt is trimmed to the CLIP token budget.
-    """
+    """Wrapper that calls build_forensic_prompt and maintains pure narrative."""
     prompt, neg = build_forensic_prompt(features, style, extra_details)
-    prompt = prompt + ", best quality, masterpiece, highly detailed face"
+    # Replaced tag booster with pure narrative
+    prompt = prompt + " It is a masterpiece of the highest quality."
     prompt = _trim_prompt_to_budget(prompt)
     return prompt, neg
 
@@ -483,19 +483,19 @@ def build_refinement_prompt(
     # Prefix medium
     prompt = f"Extreme close-up professional studio portrait {sentences[0]} {' '.join(sentences[1:])}"
 
-    # Quality tokens for photorealism
-    photo_tokens = (
-        "hyper-realistic front facing face, highly detailed skin texture, pores, 8k resolution, "
-        "cinematic lighting, masterpiece, sharp focus, professional photography, "
-        "detailed eyes, detailed hair texture"
+    # Quality narrative for photorealism (replacing tag-based promoting)
+    photo_narrative = (
+        " The subject is depicted in a hyper-realistic photograph with highly detailed skin texture "
+        "and pores. It is bathed in cinematic lighting, maintaining sharp focus as a masterpiece "
+        "of professional photography."
     )
 
-    prompt = prompt + ", " + photo_tokens
+    prompt = prompt + photo_narrative
 
     if extra_details.strip():
         details = extra_details.strip().lower()
         if "sketch" not in details and "pencil" not in details:
-            prompt += ", " + extra_details.strip()
+            prompt += " " + extra_details.strip()
 
     negative_prompt = (
         "scribble, sketch, drawing, painting, pencil, charcoal, cartoon, anime, 3d, monochromatic, "
@@ -510,7 +510,8 @@ def build_sdxl_refinement_prompt(
 ) -> tuple[str, str]:
     """Wrapper for SDXL refinement pass."""
     prompt, neg = build_refinement_prompt(features, extra_details)
-    return prompt + ", best quality, highly detailed face", neg
+    # Narrative enforcement
+    return prompt + " It is a beautifully rendered, highly detailed portrait.", neg
 
 
 def build_edit_prompt(
@@ -524,25 +525,15 @@ def build_edit_prompt(
     edit instruction from the operator. The edit instruction is
     given elevated weighting to ensure it takes effect even at
     low denoise strengths.
-
-    Args:
-        features: dict mapping category name → selected option.
-        edit_instruction: Free-text edit (e.g., "make the nose more pointed").
-        style: The sketch style to maintain.
-
-    Returns:
-        (prompt, negative_prompt) tuple for the i2i pass.
     """
-    # In V2.1, Regional Inpainting prevents semantic locking, so we can pass the
-    # full grammatical narrative to ensure unmasked context is perfectly understood.
     sentences = _build_narrative(features, is_photo=False)
     base_prompt = f"A highly detailed {style.lower()} {sentences[0]} {' '.join(sentences[1:])}"
 
-    # Append the heavily weighted edit instruction
+    # Append the heavily weighted edit instruction in a natural structure if possible
     if edit_instruction.strip():
-        base_prompt += f", ({edit_instruction.strip()}:1.5)"
+        base_prompt += f" Specifically ensuring that: ({edit_instruction.strip()}:1.5)."
         
-    # Append boosters
-    base_prompt += ", best quality, masterpiece, highly detailed face"
+    # Append narrative boosters
+    base_prompt += " This is a masterpiece portrait with a highly detailed face."
 
     return base_prompt, FORENSIC_NEGATIVE

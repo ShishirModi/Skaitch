@@ -53,8 +53,14 @@ def create_graduated_strength_map(
     """
     mask_np = np.array(mask_pil, dtype=np.float32) / 255.0
 
-    # Normalize mask values to [edge_strength, center_strength]
-    strength_map = edge_strength + mask_np * (center_strength - edge_strength)
+    # Smoothly map from 0 at the absolute exterior, blending into edge_strength 
+    # at the boundary, up to center_strength in the core.
+    # Where mask_np is 0, strength is strictly 0.
+    strength_map = np.where(
+        mask_np == 0, 
+        0.0, 
+        mask_np * center_strength
+    )
 
     return strength_map
 

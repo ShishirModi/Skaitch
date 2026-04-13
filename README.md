@@ -8,9 +8,11 @@ Skaitch is a professional-grade forensic sketching and photorealistic refinement
 *   **Phase I (Narrative Prompting):** Leverages a sophisticated prompt builder to construct grammatical narratives from categorical facial features. The SDXL Base 1.0 model parses this narrative to generate structural sketch variants in 4 styles: **Pencil sketch**, **Charcoal sketch**, **Police composite**, and **Forensic artist rendering**. Enhanced with ethnicity-specific anatomical grounding, adaptive guidance scaling based on feature complexity, and a CLIP token budget guard to prevent silent prompt truncation.
 *   **Batched Generation:** All three sketch variants are generated in a single batched forward pass (`num_images_per_prompt=3`) with diversified seeds using large prime offsets, reducing wall-clock time by ~2× while producing meaningfully diverse compositions.
 *   **Phase II (ControlNet Refinement):** Uses the `diffusers/controlnet-canny-sdxl-1.0` pipeline to elevate the finalized sketch into a photorealistic composite. Sketch contrast is pre-enhanced via CLAHE before multi-modal edge fusion (Canny + Sobel + Laplacian). The adaptive ControlNet conditioning scale, configurable inference steps (default 40), and region-specific post-processing sharpening are now fully wired into the live pipeline path.
-*   **Targeted Mask Editing (Img2Img + Compositing):** Uses `StableDiffusionXLImg2ImgPipeline` with post-generation mask compositing, ensuring the base UNet's 4-channel architecture is correctly matched. The full `prepare_enhanced_inpaint_inputs()` pipeline (feathering, auto-dilation, adaptive strength, graduated strength maps) is wired in. Aspect-ratio-aware canvas dimensions prevent coordinate skew on non-square resolutions.
-*   **Automated Face Restoration (Phase II only):** CodeFormer is now reserved exclusively for the photorealistic Phase II output, where its VQGAN codebook operates in the correct domain. A face-detection gate prevents silent failures when no faces are detected.
-*   **Enterprise Stability:** Threading locks protect global pipeline caches against race conditions in multi-session deployments. The base pipeline is fully unloaded before Phase II to prevent VRAM deadlocks. Edit history is capped at 15 entries to prevent unbounded memory growth. Model download integrity is validated by total file size.
+*   **Domain-Specialized Generative Pipeline:** A unified automated execution environment that downloads forensic databases (CUFS, IIIT-D), normalizes faces to structural constraints, and dynamically tunes **custom LoRA (skaitch_lora)** identifying stylistic mappings and a **Sketch ControlNet (controlnet_sketch)** ensuring rigid unyielding geometric faithfulness—removing dependencies on canonical Canny maps.
+*   **Fully Automated Setup:** Running the application automatically initializes rigorous dependency verification, optionally triggering dataset synthesis (`preprocess.py`) and LoRA/ControlNet acceleration jobs (`train_lora.py`, `train_controlnet.py`) if the weights do not exist locally.
+*   **Targeted Mask Editing (Img2Img + Compositing):** Uses `StableDiffusionXLImg2ImgPipeline` with post-generation mask compositing, ensuring the base UNet's 4-channel architecture is correctly matched. The full `prepare_enhanced_inpaint_inputs()` pipeline (feathering, auto-dilation, adaptive strength, graduated strength maps mapping matrix) is wired into the UI loop preventing pixel drift in untouched sections.
+*   **Automated Face Restoration (Phase II only):** CodeFormer is reserved exclusively for the photorealistic Phase II output, where its VQGAN codebook operates in the correct photorealistic domain. A face-detection gate prevents silent failures when no faces are detected.
+*   **Enterprise Stability:** Threading locks protect global pipeline caches against race conditions in multi-session deployments. The base pipeline is fully unloaded before Phase II to prevent VRAM deadlocks. Edit history is capped at 15 entries to prevent unbounded memory growth.
 
 ## System Requirements
 
@@ -43,12 +45,14 @@ cp .env.example .env
 ```
 Ensure `SKAITCH_MODEL_DIR` points to an SSD path to ensure rapid model swapping. Set `ADMIN_PASSWORD` to secure the settings page and gallery.
 
-**4. Download Model Weights**
+**4. Download Model Weights & Execute Training Pipelines**
 Skaitch relies on local models to ensure privacy. Run the automated downloader:
 ```bash
 python download_model.py
 ```
-*This downloads SDXL Base, the SDXL Canny ControlNet, and CodeFormer to your configured directory.*
+*This downloads SDXL Base and CodeFormer to your configured directory.*
+
+On initial startup, `app.py` will dynamically check for the specialized forensic pipelines (`skaitch_lora.safetensors` and `controlnet_sketch.safetensors`). If they are missing, it will automatically run data generation across CUFS arrays and initialize Diffusers training processes sequentially.
 
 ## Execution
 
@@ -65,12 +69,12 @@ Skaitch uses a tailored CSS overlay enforcing a clean, high-contrast B2B SaaS ae
 
 ## Repository Structure
 
-*   `app.py`: Streamlit orchestration, session state management, UI logic, and thread-safe pipeline lifecycle (load/unload with `threading.Lock`). Implements batched generation, adaptive guidance, edit history capping, and VRAM-safe Phase I→II transitions.
-*   `prompt_builder.py`: Maps UI dropdowns to narrative strings and applies SDXL syntax boosters. Includes `build_sdxl_forensic_prompt()` (with CLIP token budget guard), `build_sdxl_refinement_prompt()`, `build_edit_prompt()`, `compute_adaptive_guidance_scale()` (now wired into the live pipeline), ethnicity-specific anatomical grounding, and prompt-based mask region inference with word-boundary-aware matching (list-of-tuples structure, no duplicate-key collisions).
-*   `download_model.py`: Automates environment validation and weight loading with file-size-based integrity validation to catch partial/corrupted downloads.
-*   `face_restoration.py`: Wraps CodeFormer inference with cached device detection and a face-detection gate that returns the original image (with diagnostics) when no faces are found.
-*   `refinement_pipeline.py`: Stage II SDXL-ControlNet pipeline with thread-safe loading, sketch pre-enhancement (CLAHE), `get_refinement_config()` integration, and configurable inference steps (default 40).
-*   `sketch_refiner.py`: SDXL Img2Img editing (`StableDiffusionXLImg2ImgPipeline`) with post-generation mask compositing. Wires `prepare_enhanced_inpaint_inputs()` for feathering, auto-dilation, and adaptive strength. Fixes the UNet channel mismatch that previously caused masks to be silently ignored.
+*   `app.py`: Streamlit orchestration, auto-launching background training routines (LoRA, ControlNet), session state management, and thread-safe pipeline lifecycle.
+*   `prompt_builder.py`: Maps UI dropdowns to narrative strings avoiding random comma delimiters. Strict enforcement of narrative-grammar structure over canonical AI token tags, enforcing specific CLIP constraints natively.
+*   `download_model.py`: Automates environment validation and canonical model caching.
+*   `face_restoration.py`: Wraps CodeFormer inference with cached device detection.
+*   `refinement_pipeline.py`: Stage II Phase rendering loading the local custom `controlnet_sketch` model to enforce structure.
+*   `sketch_refiner.py`: Implements SDXL Img2Img editing mapped cleanly onto `apply_graduated_strength_to_image` to support attenuated feathering on regional masks.
 *   `visual_aids.py`: Inlines raw SVGs providing anatomical reference for operators.
 *   `.streamlit/config.toml`: Enforces light mode and disables CORS/XSRF to support Cloudflare Tunnel deployments.
 *   `inpaint_enhancements.py`: Fully integrated enhancement module providing mask feathering, graduated strength maps, prompt-based region inference, adaptive inpaint strength auto-tuning, and improved difference blending with soft attenuation curve for stable cascading edits.
