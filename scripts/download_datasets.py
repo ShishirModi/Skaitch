@@ -11,7 +11,7 @@ def download_cufs(output_dir):
         import shutil
         
         print("[INFO] Attempting to download CUFS dataset via kagglehub...")
-        path = kagglehub.dataset_download("arbazhussain/cuhk-face-sketch-database-cufs")
+        path = kagglehub.dataset_download("arbazkhan971/cuhk-face-sketch-database-cufs")
         print(f"[SUCCESS] Dataset cached at: {path}")
         
         # Copy from kagglehub cache to our defined cufs_dir
@@ -29,16 +29,16 @@ def download_cufs(output_dir):
     except ImportError:
         print("[WARNING] 'kagglehub' module not found. Falling back to Kaggle CLI...")
         try:
-            subprocess.run(["kaggle", "datasets", "download", "-d", "arbazhussain/cuhk-face-sketch-database-cufs", "-p", cufs_dir, "--unzip"], check=True)
+            subprocess.run(["kaggle", "datasets", "download", "-d", "arbazkhan971/cuhk-face-sketch-database-cufs", "-p", cufs_dir, "--unzip"], check=True)
             print(f"[SUCCESS] CUFS downloaded and extracted to {cufs_dir}")
         except Exception as e:
             print(f"[ERROR] Automated download for CUFS failed: {e}")
-            print("Please manually download from Kaggle (arbazhussain/cuhk-face-sketch-database-cufs) or MMLAB.")
+            print("Please manually download from Kaggle (arbazkhan971/cuhk-face-sketch-database-cufs) or MMLAB.")
             print(f"Extract contents to: {cufs_dir}")
             
     except Exception as e:
         print(f"[WARNING] Automated download for CUFS failed: {e}")
-        print("Please manually download from Kaggle (arbazhussain/cuhk-face-sketch-database-cufs) or MMLAB.")
+        print("Please manually download from Kaggle (arbazkhan971/cuhk-face-sketch-database-cufs) or MMLAB.")
         print(f"Extract contents to: {cufs_dir}")
 
 def download_iiitd(output_dir):
