@@ -362,9 +362,80 @@ st.markdown(
         letter-spacing: 0.5px;
     }
 
-    /* ── Sliders & Toggles (Amber) ───────────────────────────────────── */
-    /* Streamlit slider overrides requires complex targeting, but we let Streamlit handle theming where possible
-       or rely on default primaryColor in config.toml if requested later. For now we use standard Streamlit slider */
+    /* ── Selectbox ───────────────────────────────────────────────────── */
+    .stSelectbox > div > div {
+        border-radius: 8px !important;
+        border: 1px solid rgba(28,28,30,0.12) !important;
+        background: #FAFAFA !important;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+        font-size: 0.88rem;
+        padding: 0.1rem 0.25rem;
+    }
+    .stSelectbox > div > div:focus-within {
+        border-color: #F59E0B !important;
+        box-shadow: 0 0 0 3px rgba(245,158,11,0.12) !important;
+    }
+
+    /* ── Text Inputs ─────────────────────────────────────────────────── */
+    .stTextInput > div > div > input {
+        border-radius: 8px !important;
+        border: 1px solid rgba(28,28,30,0.12) !important;
+        background: #FAFAFA !important;
+        font-size: 0.88rem;
+        padding: 0.55rem 0.75rem;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .stTextInput > div > div > input:focus {
+        border-color: #F59E0B !important;
+        box-shadow: 0 0 0 3px rgba(245,158,11,0.12) !important;
+        outline: none !important;
+    }
+    .stTextInput > div > div > input::placeholder {
+        color: #ADADAD;
+        font-style: italic;
+    }
+
+    /* ── Number Input ────────────────────────────────────────────────── */
+    .stNumberInput > div > div > input {
+        border-radius: 8px !important;
+        border: 1px solid rgba(28,28,30,0.12) !important;
+        background: #FAFAFA !important;
+        font-size: 0.88rem;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .stNumberInput > div > div > input:focus {
+        border-color: #F59E0B !important;
+        box-shadow: 0 0 0 3px rgba(245,158,11,0.12) !important;
+        outline: none !important;
+    }
+
+    /* ── Slider — Amber track & thumb ───────────────────────────────── */
+    /* Active filled track */
+    div[data-testid="stSlider"] > div > div > div > div[style*="background"] {
+        background: #F59E0B !important;
+    }
+    /* Thumb */
+    div[data-testid="stSlider"] input[type="range"]::-webkit-slider-thumb {
+        background: #F59E0B !important;
+        border: 2px solid #FFFFFF !important;
+        box-shadow: 0 1px 4px rgba(245,158,11,0.35) !important;
+        transition: box-shadow 0.15s ease;
+    }
+    div[data-testid="stSlider"] input[type="range"]::-webkit-slider-thumb:hover {
+        box-shadow: 0 2px 8px rgba(245,158,11,0.55) !important;
+    }
+    /* Track background */
+    div[data-testid="stSlider"] input[type="range"]::-webkit-slider-runnable-track {
+        background: rgba(28,28,30,0.08) !important;
+        border-radius: 4px;
+    }
+    /* Value tooltip */
+    div[data-testid="stSlider"] > div > div > div > small {
+        font-family: 'JetBrains Mono', monospace !important;
+        font-size: 0.75rem !important;
+        color: #F59E0B !important;
+        font-weight: 600 !important;
+    }
 
     /* ── Image container ─────────────────────────────────────────────── */
     .stImage img {
@@ -728,6 +799,10 @@ if "v2_extra_details" not in st.session_state:
     st.session_state.v2_extra_details = ""
 if "v2_sketch_style" not in st.session_state:
     st.session_state.v2_sketch_style = "Pencil sketch"
+# Strictly-increasing counter used as the canvas key so every edit/undo forces
+# a full st_canvas reinitialisation, preventing stale mask re-appearance.
+if "v2_mask_key_counter" not in st.session_state:
+    st.session_state.v2_mask_key_counter = 0
 
 # ─── Generation logic (STATE 1: DRAFTING) ─────────────────────────────────────
 if generate:
@@ -885,11 +960,11 @@ elif st.session_state.v2_stage == "editing" and st.session_state.v2_selected_ske
 
         edit_strength = st.slider(
             "Inpaint Denoise Strength",
-            min_value=0.50, # Inpainting requires high noise to reshape geometry
+            min_value=0.50,
             max_value=1.00,
-            value=0.85,
+            value=0.70,
             step=0.05,
-            help="At 0.85, SDXL has enough freedom to restructure the masked area entirely.",
+            help="Controls how aggressively SDXL rewrites the masked region. 0.70 balances structural reshaping with hallucination suppression. Raise toward 1.0 for extreme geometry changes; lower toward 0.5 for subtle refinements.",
             key="edit_strength",
         )
 
@@ -922,7 +997,12 @@ elif st.session_state.v2_stage == "editing" and st.session_state.v2_selected_ske
         aspect_ratio = bg_image.height / bg_image.width
         display_height = int(display_width * aspect_ratio)
 
-        # Using official ST Drawable Canvas for better proxy compatibility
+        # Persistent mask fix: use a strictly-increasing counter as the canvas key.
+        # Using history length was insufficient — undo reduces the length back to a
+        # previously seen value, causing Streamlit to restore the cached canvas state
+        # from that earlier version (the undone mask would reappear). The monotonic
+        # counter guarantees each canvas instance is unique and always starts blank.
+        canvas_key = f"mask_canvas_{st.session_state.v2_mask_key_counter}"
         canvas_result = st_canvas(
             fill_color="rgba(255, 255, 255, 1)",  # Pure white filling
             stroke_width=brush_size,
@@ -932,7 +1012,7 @@ elif st.session_state.v2_stage == "editing" and st.session_state.v2_selected_ske
             height=display_height,
             width=display_width,
             drawing_mode="freedraw",
-            key="mask_canvas",
+            key=canvas_key,
         )
         st.caption(f"*Masking Canvas  ·  {len(st.session_state.v2_edit_history)} version(s)*")
 
@@ -995,12 +1075,14 @@ elif st.session_state.v2_stage == "editing" and st.session_state.v2_selected_ske
                 )
             st.session_state.v2_edit_history.append(edited_sketch)
             st.session_state.v2_selected_sketch = edited_sketch
+            st.session_state.v2_mask_key_counter += 1  # force canvas reset
             st.rerun()
 
     # Handle undo
     if undo_edit and can_undo:
         st.session_state.v2_edit_history.pop()
         st.session_state.v2_selected_sketch = st.session_state.v2_edit_history[-1]
+        st.session_state.v2_mask_key_counter += 1  # force canvas reset — prevents undone mask reappearing
         st.rerun()
 
     # Handle back to drafts

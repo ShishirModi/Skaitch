@@ -100,6 +100,8 @@ def run_sdxl_refinement(
     # 5. Run Inference (§3.4 fix: steps now configurable, default 40)
     pipe = load_refinement_pipeline()
 
+    # Sizing fix: pass explicit width/height so non-1024×1024 sketches
+    # (e.g. 768×512) produce correctly sized and proportioned outputs.
     result = pipe(
         prompt=refinement_prompt,
         image=control_image_pil,
@@ -107,6 +109,8 @@ def run_sdxl_refinement(
         controlnet_conditioning_scale=controlnet_scale,
         num_inference_steps=num_inference_steps,
         guidance_scale=config["guidance_scale"],
+        width=sketch_pil.width,
+        height=sketch_pil.height,
     ).images[0]
 
     # 6. Apply region-specific post-processing sharpening to eyes and mouth.

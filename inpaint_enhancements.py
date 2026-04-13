@@ -193,7 +193,10 @@ def adaptive_difference_blending(
         original: Original sketch image.
         edited: Edited output from inpainting.
         max_change_factor: Threshold above which changes are attenuated (0.0-1.0).
-                          Default raised from 0.6 to 0.85 to preserve structural edits.
+                          Set to 0.65 in sketch_refiner.py — tight enough to suppress
+                          hallucinated deformations while letting deliberate masked edits
+                          pass through. The upstream mask compositing step already hard-
+                          anchors unmasked regions, so this only acts on the masked zone.
 
     Returns:
         Blended image as PIL Image.

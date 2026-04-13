@@ -104,6 +104,8 @@ def run_sketch_edit(
         torch.cuda.empty_cache()
 
     # ── Run the Img2Img generative pass ───────────────────────────────────────
+    # Sizing fix: pass explicit width/height so SDXL doesn't default to an
+    # internal target resolution that differs from the source image dimensions.
     result = i2i_pipe(
         prompt=edit_prompt,
         image=sketch_pil,
@@ -111,6 +113,8 @@ def run_sketch_edit(
         strength=effective_strength,
         guidance_scale=guidance_scale,
         num_inference_steps=num_inference_steps,
+        width=sketch_pil.width,
+        height=sketch_pil.height,
         output_type="pil",
     ).images[0]
 
@@ -121,14 +125,14 @@ def run_sketch_edit(
     result = _composite_with_mask(sketch_pil, result, mask_feathered)
 
     # ── Adaptive difference blending (§2.3 fix) ──────────────────────────────
-    # Increased max_change_factor from 0.6 → 0.85 so deliberate structural
-    # edits (nose reshaping, jawline changes) survive blending instead of being
-    # suppressed back toward the original. The mask-based compositing above
-    # already prevents hallucinations in unmasked regions.
+    # max_change_factor=0.65: tightened from 0.85 to suppress wild deformations
+    # in the composited output. Mask compositing above already anchors unmasked
+    # regions to the original, so blending only needs to dampen hallucinated
+    # artifacts inside the mask — not preserve deliberate edits against global drift.
     result = adaptive_difference_blending(
         original=sketch_pil,
         edited=result,
-        max_change_factor=0.85,
+        max_change_factor=0.65,
     )
 
     return result
