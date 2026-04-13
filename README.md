@@ -55,7 +55,7 @@ python download_model.py
 On initial startup, `app.py` will dynamically check for the specialized forensic pipelines (`skaitch_lora.safetensors` and `controlnet_sketch.safetensors`). If they are missing, it will automatically run data generation across CUFS arrays and initialize Diffusers training processes sequentially.
 
 > [!NOTE]
-> **Dataset Fetching:** The system automatically downloads the CUFS dataset using `kagglehub` ([arbazkhan971/cuhk-face-sketch-database-cufs](https://www.kaggle.com/datasets/arbazkhan971/cuhk-face-sketch-database-cufs)). However, **IIIT-D Sketch** and **PRIP-VSGC** reside behind academic request walls. Operators must manually extract them into `data/raw/` prior to running the pipeline.
+> **Dataset Fetching:** The system automatically downloads the CUFS dataset using `kagglehub` ([arbazkhan971/cuhk-face-sketch-database-cufs](https://www.kaggle.com/datasets/arbazkhan971/cuhk-face-sketch-database-cufs)). However, the **[IIIT-D Sketch](https://iab-rubric.org/index.php/iiit-d-sketch-database)** database resides behind an academic request wall. Operators must manually extract it into `data/raw/` prior to running the pipeline.
 
 ## Execution
 
